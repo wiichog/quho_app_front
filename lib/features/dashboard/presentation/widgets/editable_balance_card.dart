@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:quho_app/shared/design_system/colors/app_colors.dart';
+import 'package:quho_app/shared/design_system/spacing/app_spacing.dart';
+import 'package:quho_app/shared/design_system/typography/app_text_styles.dart';
+import 'package:quho_app/core/utils/formatters.dart';
+
+class EditableBalanceCard extends StatefulWidget {
+  final double balance;
+  final VoidCallback? onEdit;
+
+  const EditableBalanceCard({
+    super.key,
+    required this.balance,
+    this.onEdit,
+  });
+
+  @override
+  State<EditableBalanceCard> createState() => _EditableBalanceCardState();
+}
+
+class _EditableBalanceCardState extends State<EditableBalanceCard> {
+  bool _isEditing = false;
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.balance.toStringAsFixed(2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _startEditing() {
+    setState(() {
+      _isEditing = true;
+    });
+  }
+
+  void _saveChanges() {
+    setState(() {
+      _isEditing = false;
+    });
+    // TODO: Disparar evento para actualizar el balance en el backend
+    widget.onEdit?.call();
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _isEditing = false;
+      _controller.text = widget.balance.toStringAsFixed(2);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.paddingLg,
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientHero,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.teal.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Balance Disponible',
+                style: AppTextStyles.bodyMedium(color: AppColors.white.withOpacity(0.9)),
+              ),
+              if (!_isEditing)
+                InkWell(
+                  onTap: _startEditing,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.edit,
+                      color: AppColors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          AppSpacing.verticalMd,
+          if (_isEditing)
+            Row(
+              children: [
+                Text(
+                  'Q ',
+                  style: AppTextStyles.h1(color: AppColors.white),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: AppTextStyles.h1(color: AppColors.white),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: '0.00',
+                      hintStyle: AppTextStyles.h1(
+                        color: AppColors.white.withOpacity(0.5),
+                      ),
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                    ],
+                    autofocus: true,
+                  ),
+                ),
+              ],
+            )
+          else
+            Text(
+              Formatters.currency(widget.balance),
+              style: AppTextStyles.h1(color: AppColors.white).copyWith(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          if (_isEditing) ...[
+            AppSpacing.verticalMd,
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelEditing,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.white),
+                      foregroundColor: AppColors.white,
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                AppSpacing.horizontalMd,
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saveChanges,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.white,
+                      foregroundColor: AppColors.teal,
+                    ),
+                    child: const Text('Guardar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
