@@ -1,0 +1,31 @@
+customHeaders:
+  - pattern: "**/*"
+    headers:
+      - key: X-Frame-Options
+        value: DENY
+      - key: X-Content-Type-Options
+        value: nosniff
+      - key: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - key: Permissions-Policy
+        value: geolocation=(), microphone=(), camera=()
+
+  - pattern: /assets/**
+    headers:
+      - key: Cache-Control
+        value: public, max-age=31536000, immutable
+
+  - pattern: /icons/**
+    headers:
+      - key: Cache-Control
+        value: public, max-age=31536000, immutable
+
+  - pattern: /index.html
+    headers:
+      - key: Cache-Control
+        value: no-cache, no-store, must-revalidate
+
+  - pattern: /manifest.json
+    headers:
+      - key: Cache-Control
+        value: public, max-age=3600
