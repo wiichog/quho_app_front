@@ -1,13 +1,14 @@
 {
-    "name": "quho_app",
-    "short_name": "quho_app",
-    "start_url": ".",
+    "name": "QUHO - Finanzas Personales con IA",
+    "short_name": "QUHO",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#667eea",
+    "theme_color": "#667eea",
+    "description": "Tu asistente financiero personal con IA. Gestiona tus finanzas de forma inteligente y gamificada.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "scope": "/",
     "icons": [
         {
             "src": "icons/Icon-192.png",

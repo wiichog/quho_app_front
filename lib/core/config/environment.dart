@@ -1,21 +1,40 @@
 /// Configuración de entornos para QUHO
 enum Environment {
   development,
+  staging,
   production,
 }
 
 class EnvironmentConfig {
-  static const Environment _currentEnvironment = 
-      // TODO: Cambiar a production para el release
-      Environment.development;
+  // Detectar ambiente desde variables de entorno o usar default
+  static Environment get _currentEnvironment {
+    const envString = String.fromEnvironment('ENV', defaultValue: 'development');
+    switch (envString) {
+      case 'production':
+        return Environment.production;
+      case 'staging':
+        return Environment.staging;
+      default:
+        return Environment.development;
+    }
+  }
 
   static Environment get current => _currentEnvironment;
 
   /// URL base del API según el entorno
   static String get apiBaseUrl {
+    // Primero intentar obtener de variable de entorno
+    const apiUrl = String.fromEnvironment('API_URL');
+    if (apiUrl.isNotEmpty) {
+      return apiUrl;
+    }
+    
+    // Fallback según ambiente
     switch (_currentEnvironment) {
       case Environment.development:
         return 'http://localhost:8000/api/v1';
+      case Environment.staging:
+        return 'https://api-staging.quhoapp.com/api/v1';
       case Environment.production:
         return 'https://api.quhoapp.com/api/v1';
     }
@@ -35,7 +54,7 @@ class EnvironmentConfig {
   }
 
   /// Configuración de logging
-  static bool get enableLogging => isDebug;
+  static bool get enableLogging => !isProduction;
 
   /// Configuración de analytics
   static bool get enableAnalytics => isProduction;
