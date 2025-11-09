@@ -61,7 +61,7 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: AppSpacing.paddingLg,
+      padding: AppSpacing.paddingMd,
       decoration: BoxDecoration(
         gradient: AppColors.gradientHero,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
@@ -75,6 +75,7 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -101,7 +102,7 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
                 ),
             ],
           ),
-          AppSpacing.verticalMd,
+          AppSpacing.verticalSm,
           if (_isEditing)
             Row(
               children: [
@@ -130,11 +131,15 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
               ],
             )
           else
-            Text(
-              Formatters.currency(widget.balance),
-              style: AppTextStyles.h1(color: AppColors.white).copyWith(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                Formatters.currency(widget.balance),
+                style: AppTextStyles.h1(color: AppColors.white).copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           if (_isEditing) ...[

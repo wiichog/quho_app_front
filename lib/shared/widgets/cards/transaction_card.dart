@@ -11,6 +11,8 @@ class TransactionCard extends StatelessWidget {
   final DateTime date;
   final bool isIncome;
   final VoidCallback? onTap;
+  final String? originalCurrency;
+  final double? originalAmount;
 
   const TransactionCard({
     super.key,
@@ -20,6 +22,8 @@ class TransactionCard extends StatelessWidget {
     required this.date,
     this.isIncome = false,
     this.onTap,
+    this.originalCurrency,
+    this.originalAmount,
   });
 
   @override
@@ -76,10 +80,23 @@ class TransactionCard extends StatelessWidget {
               
               AppSpacing.horizontalMd,
               
-              // Amount
-              Text(
-                '$amountPrefix${Formatters.currency(amount)}',
-                style: AppTextStyles.numberSmall(color: amountColor),
+              // Amount + original (si aplica)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$amountPrefix${Formatters.currency(amount)}',
+                    style: AppTextStyles.numberSmall(color: amountColor),
+                  ),
+                  if (originalCurrency != null && originalCurrency != 'GTQ' && originalAmount != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        Formatters.currencyWithCode(originalCurrency!, originalAmount!),
+                        style: AppTextStyles.caption(color: AppColors.gray600),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

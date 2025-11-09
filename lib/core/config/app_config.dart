@@ -33,6 +33,11 @@ import 'package:quho_app/features/finances/data/repositories/finances_repository
 import 'package:quho_app/features/finances/domain/repositories/finances_repository.dart';
 import 'package:quho_app/features/finances/domain/usecases/get_finances_overview_usecase.dart';
 import 'package:quho_app/features/finances/presentation/bloc/finances_bloc.dart';
+import 'package:quho_app/features/transactions/data/datasources/transactions_remote_datasource.dart';
+import 'package:quho_app/features/transactions/data/repositories/transactions_repository_impl.dart';
+import 'package:quho_app/features/transactions/domain/repositories/transactions_repository.dart';
+import 'package:quho_app/features/transactions/domain/usecases/get_transactions_usecase.dart';
+import 'package:quho_app/features/transactions/presentation/bloc/transactions_bloc.dart';
 
 /// Singleton para configuración global de la aplicación
 final getIt = GetIt.instance;
@@ -161,6 +166,26 @@ Future<void> setupDependencies() async {
   getIt.registerFactory(
     () => FinancesBloc(
       getFinancesOverviewUseCase: getIt(),
+    ),
+  );
+
+  // ========== TRANSACTIONS - DATA SOURCES ==========
+  getIt.registerLazySingleton<TransactionsRemoteDataSource>(
+    () => TransactionsRemoteDataSourceImpl(apiClient: getIt()),
+  );
+
+  // ========== TRANSACTIONS - REPOSITORIES ==========
+  getIt.registerLazySingleton<TransactionsRepository>(
+    () => TransactionsRepositoryImpl(remoteDataSource: getIt()),
+  );
+
+  // ========== TRANSACTIONS - USE CASES ==========
+  getIt.registerLazySingleton(() => GetTransactionsUseCase(getIt()));
+
+  // ========== TRANSACTIONS - BLOC ==========
+  getIt.registerFactory(
+    () => TransactionsBloc(
+      getTransactionsUseCase: getIt(),
     ),
   );
 }

@@ -12,6 +12,7 @@ import 'package:quho_app/features/dashboard/presentation/bloc/dashboard_bloc.dar
 import 'package:quho_app/features/dashboard/presentation/bloc/dashboard_event.dart';
 import 'package:quho_app/features/dashboard/presentation/bloc/dashboard_state.dart';
 import 'package:quho_app/features/dashboard/domain/entities/transaction.dart';
+import 'package:quho_app/features/dashboard/domain/entities/budget_summary.dart';
 import 'package:quho_app/shared/design_system/design_system.dart';
 import 'package:quho_app/shared/widgets/cards/transaction_card.dart';
 import 'package:quho_app/shared/widgets/feedback/empty_state.dart';
@@ -24,6 +25,7 @@ import 'package:quho_app/features/dashboard/presentation/widgets/categorization_
 import 'package:quho_app/features/dashboard/presentation/widgets/new_income_source_modal.dart';
 import 'package:quho_app/features/dashboard/presentation/widgets/category_selector_modal.dart';
 import 'package:quho_app/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
+import 'package:quho_app/features/dashboard/data/models/category_budget_tracking_model.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -189,8 +191,74 @@ class _DashboardContent extends StatelessWidget {
     await _showFixedExpenseSelector(context, transaction);
   }
 
+  Future<void> _confirmAndResetCategorizations(BuildContext context) async {
+    final datasource = getIt<DashboardRemoteDataSource>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Resetear categorizaciones', style: AppTextStyles.h4()),
+        content: Text(
+          'Esto pondrá todas tus transacciones como "Sin categorizar" y recalculará tus métricas. ¿Deseas continuar?',
+          style: AppTextStyles.bodyMedium(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('Cancelar', style: AppTextStyles.bodyMedium(color: AppColors.gray600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.orange, foregroundColor: AppColors.white),
+            child: Text('Sí, resetear', style: AppTextStyles.bodyMedium().copyWith(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Loader
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await datasource.resetCategorizations();
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // close loader
+
+      // Reload dashboard
+      context.read<DashboardBloc>().add(const LoadDashboardDataEvent());
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.fixed,
+          content: Text('✅ Categorizaciones reseteadas'),
+          backgroundColor: AppColors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // close loader
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.fixed,
+          content: Text('Error al resetear: $e'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _showCategorySelector(BuildContext context, Transaction transaction) async {
     final datasource = getIt<DashboardRemoteDataSource>();
+    final rootContext = context;
     
     // Mostrar un loading dialog mientras cargamos las categorías
     showDialog(
@@ -230,12 +298,14 @@ class _DashboardContent extends StatelessWidget {
       
       // Mostrar el modal de categorías
       await showDialog(
-        context: context,
-        builder: (context) => CategorySelectorModal(
+        context: rootContext,
+        builder: (dialogContext) => CategorySelectorModal(
           categories: categoryItems,
           onCategorySelected: (category, updateMerchant) async {
             print('✅ Categoría seleccionada: ${category.name} (ID: ${category.id})');
-            await _categorizeTransaction(context, transaction.id, category.id, updateMerchant);
+            // Cerrar el modal de selección antes de categorizar
+            Navigator.of(dialogContext).pop();
+            await _categorizeTransaction(rootContext, transaction.id, category.id, updateMerchant);
           },
         ),
       );
@@ -261,14 +331,42 @@ class _DashboardContent extends StatelessWidget {
   Future<void> _categorizeTransaction(BuildContext context, String transactionId, int categoryId, bool updateMerchant) async {
     final datasource = getIt<DashboardRemoteDataSource>();
     
-    try {
-      // Mostrar loading
+    var loaderShown = false;
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    // Mostrar loading dialog
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Categorizando transacción...')),
+      loaderShown = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        useRootNavigator: true,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Categorizando...',
+                    style: AppTextStyles.bodyMedium(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         );
       }
 
+    try {
       // Categorizar
       await datasource.categorizeTransaction(
         transactionId: transactionId,
@@ -278,20 +376,28 @@ class _DashboardContent extends StatelessWidget {
 
       if (!context.mounted) return;
 
-      // Recargar dashboard y esperar un momento para que se procese
+      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
       print('🔄 Recargando dashboard...');
-      context.read<DashboardBloc>().add(const LoadDashboardDataEvent());
+      final bloc = context.read<DashboardBloc>();
+      bloc.add(const LoadDashboardDataEvent());
+      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 5));
+      print('✅ Dashboard recargado (DashboardLoaded recibido)');
       
-      // Pequeña pausa para dar tiempo al backend a procesar y al Bloc a recargar
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      print('✅ Dashboard recargado');
+      // Esperar un frame para que Flutter procese el cambio de estado
+      await Future.delayed(const Duration(milliseconds: 100));
       
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShown) {
+        rootNavigator.pop();
+        loaderShown = false;
+      }
       
       // Mostrar éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('✅ Transacción categorizada correctamente'),
           backgroundColor: AppColors.green,
           duration: Duration(seconds: 2),
@@ -299,17 +405,31 @@ class _DashboardContent extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShown) {
+        rootNavigator.pop();
+        loaderShown = false;
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('Error al categorizar: $e'),
           backgroundColor: AppColors.red,
         ),
       );
+    } finally {
+      // Salvaguarda por si el loader quedó abierto
+      if (loaderShown) {
+        try { rootNavigator.pop(); } catch (_) {}
+      }
     }
   }
 
   Future<void> _showIncomeSourceSelector(BuildContext context, Transaction transaction) async {
     final datasource = getIt<DashboardRemoteDataSource>();
+    final rootContext = context;
     
     // Mostrar un loading dialog mientras cargamos las fuentes de ingreso
     showDialog(
@@ -349,8 +469,8 @@ class _DashboardContent extends StatelessWidget {
       
       // Mostrar selector de fuentes de ingreso con opción "Otros"
       await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
+        context: rootContext,
+        builder: (dialogContext) => AlertDialog(
           title: Text(
             'Selecciona el origen del ingreso',
             style: AppTextStyles.h4(),
@@ -360,7 +480,7 @@ class _DashboardContent extends StatelessWidget {
             child: ListView.builder(
               shrinkWrap: true,
               itemCount: incomeSources.length + 1, // +1 para la opción "Otros"
-              itemBuilder: (context, index) {
+              itemBuilder: (listContext, index) {
                 // Última opción: "Otros"
                 if (index == incomeSources.length) {
                   return ListTile(
@@ -386,8 +506,8 @@ class _DashboardContent extends StatelessWidget {
                       ),
                     ),
                     onTap: () async {
-                      Navigator.of(context).pop();
-                      await _showNewIncomeSourceForm(context, transaction);
+                      Navigator.of(dialogContext).pop();
+                      await _showNewIncomeSourceForm(rootContext, transaction);
                     },
                   );
                 }
@@ -410,8 +530,8 @@ class _DashboardContent extends StatelessWidget {
                   ),
                   trailing: Icon(Icons.check_circle_outline, color: AppColors.gray500),
                   onTap: () async {
-                    Navigator.of(context).pop();
-                    await _categorizeIncomeTransaction(context, transaction.id, source.id);
+                    Navigator.of(dialogContext).pop();
+                    await _categorizeIncomeTransaction(rootContext, transaction.id, source.id);
                   },
                 );
               },
@@ -447,6 +567,7 @@ class _DashboardContent extends StatelessWidget {
 
   Future<void> _showFixedExpenseSelector(BuildContext context, Transaction transaction) async {
     final datasource = getIt<DashboardRemoteDataSource>();
+    final rootContext = context;
     
     // Mostrar un loading dialog mientras cargamos los gastos fijos
     showDialog(
@@ -458,11 +579,27 @@ class _DashboardContent extends StatelessWidget {
     );
     
     try {
-      print('🔵 Obteniendo gastos fijos...');
+      print('🔵 Obteniendo gastos fijos y trackings...');
       
-      // Obtener gastos fijos
-      final fixedExpenses = await datasource.getFixedExpenses();
+      // Obtener gastos fijos y trackings en paralelo
+      final results = await Future.wait([
+        datasource.getFixedExpenses(),
+        datasource.getCategoryBudgetTrackings(),
+      ]);
+      
+      final fixedExpenses = results[0] as List<FixedExpenseModel>;
+      final trackings = results[1] as List<CategoryBudgetTrackingModel>;
+      
       print('✅ Gastos fijos obtenidos: ${fixedExpenses.length}');
+      print('✅ Trackings obtenidos: ${trackings.length}');
+      
+      // Crear un mapa de tracking por fixed expense ID
+      final trackingMap = <int, CategoryBudgetTrackingModel>{};
+      for (final tracking in trackings) {
+        if (tracking.fixedExpenseId != null) {
+          trackingMap[tracking.fixedExpenseId!] = tracking;
+        }
+      }
       
       // Cerrar loading
       if (context.mounted) {
@@ -482,18 +619,22 @@ class _DashboardContent extends StatelessWidget {
       
       // Mostrar selector de gastos fijos con opción "Otros"
       await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
+        context: rootContext,
+        builder: (dialogContext) => AlertDialog(
           title: Text(
             '¿Este gasto corresponde a un presupuesto fijo?',
             style: AppTextStyles.h4(),
           ),
           content: SizedBox(
             width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: fixedExpenses.length + 1, // +1 para la opción "Otros"
-              itemBuilder: (context, index) {
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: fixedExpenses.length + 1, // +1 para la opción "Otros"
+                    itemBuilder: (listContext, index) {
                 // Última opción: "Otros" (no corresponde a gasto fijo)
                 if (index == fixedExpenses.length) {
                   return ListTile(
@@ -519,40 +660,137 @@ class _DashboardContent extends StatelessWidget {
                       ),
                     ),
                     onTap: () async {
-                      Navigator.of(context).pop();
-                      await _showStandardCategorizationModal(context, transaction);
+                      Navigator.of(dialogContext).pop();
+                      await _showStandardCategorizationModal(rootContext, transaction);
                     },
                   );
                 }
                 
                 // Gastos fijos existentes
                 final expense = fixedExpenses[index];
-                return ListTile(
-                  leading: Icon(Icons.receipt_long, color: AppColors.red),
-                  title: Text(
+                final tracking = trackingMap[expense.id];
+                final isClosed = tracking?.isClosed ?? false;
+                final remainingAmount = tracking?.remainingAmount ?? expense.amount;
+                final isOverBudget = tracking?.isOverBudget ?? false;
+                
+                // Color basado en el estado
+                final leadingColor = isClosed ? AppColors.gray400 : AppColors.red;
+                final statusColor = isOverBudget ? AppColors.red : (remainingAmount <= 0 ? AppColors.orange : AppColors.green);
+                
+                return Opacity(
+                  opacity: isClosed ? 0.5 : 1.0,
+                  child: ListTile(
+                    enabled: !isClosed,
+                    leading: Icon(
+                      isClosed ? Icons.lock : Icons.receipt_long, 
+                      color: leadingColor,
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
                     expense.name,
                     style: AppTextStyles.bodyMedium().copyWith(
                       fontWeight: FontWeight.w600,
+                              decoration: isClosed ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  subtitle: Text(
+                        ),
+                        if (tracking != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              Formatters.currency(remainingAmount),
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: statusColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                     '${expense.categoryName} • ${Formatters.currency(expense.amount)} - ${expense.frequency}',
                     style: AppTextStyles.bodySmall().copyWith(
                       color: AppColors.gray600,
                     ),
                   ),
-                  trailing: Icon(Icons.check_circle_outline, color: AppColors.gray500),
-                  onTap: () async {
-                    Navigator.of(context).pop();
+                        if (tracking != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Gastado: ${Formatters.currency(tracking.spentAmount)} de ${Formatters.currency(tracking.budgetedAmount)}',
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.gray500,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                        if (isClosed) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '🔒 Cerrado - no esperas más gastos',
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.gray500,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    trailing: Icon(
+                      isClosed ? Icons.lock : Icons.check_circle_outline, 
+                      color: isClosed ? AppColors.gray400 : AppColors.gray500,
+                    ),
+                    onTap: isClosed ? null : () async {
+                      Navigator.of(dialogContext).pop();
                     await _categorizeExpenseTransaction(
-                      context, 
+                        rootContext, 
                       transaction.id, 
                       expense.categoryId, 
                       expense.id,
+                        tracking: tracking,
                     );
                   },
+                  ),
                 );
               },
+                  ),
+                ),
+                // Nota informativa sobre categorías cerradas
+                if (trackingMap.values.any((t) => t.isClosed))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 16, color: AppColors.blue),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '💡 Las categorías cerradas se reabrirán automáticamente el próximo mes',
+                              style: AppTextStyles.caption(color: AppColors.blue).copyWith(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           actions: [
@@ -610,6 +848,7 @@ class _DashboardContent extends StatelessWidget {
     await showDialog(
       context: context,
       builder: (context) => NewIncomeSourceModal(
+        transactionAmount: transaction.amount,
         onSubmit: (name, amount, frequency, isNetAmount, taxContext) async {
           await _categorizeIncomeWithNewSource(
             context,
@@ -635,41 +874,84 @@ class _DashboardContent extends StatelessWidget {
     String taxContext,
   ) async {
     final datasource = getIt<DashboardRemoteDataSource>();
+    final isOneTime = frequency == 'one_time';
+    final frequencyForApi = isOneTime ? 'monthly' : frequency;
     
-    try {
-      // Mostrar loading
+    var loaderShownNew = false;
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    // Mostrar loading dialog
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Creando fuente de ingreso...')),
+      loaderShownNew = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        useRootNavigator: true,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Creando fuente de ingreso...',
+                    style: AppTextStyles.bodyMedium(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         );
       }
 
+    try {
       // Crear fuente y categorizar
-      await datasource.categorizeIncomeWithNewSource(
+      final tx = await datasource.categorizeIncomeWithNewSource(
         transactionId: transactionId,
         name: name,
         amount: amount,
-        frequency: frequency,
+        frequency: frequencyForApi,
         isNetAmount: isNetAmount,
         taxContext: taxContext,
       );
 
+      // Si es pago único, desactivar la fuente creada (soft delete)
+      if (isOneTime && tx.incomeSourceId != null) {
+        await datasource.deactivateIncomeSource(incomeSourceId: tx.incomeSourceId!);
+      }
+
       if (!context.mounted) return;
 
-      // Recargar dashboard y esperar un momento para que se procese
+      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
       print('🔄 Recargando dashboard...');
-      context.read<DashboardBloc>().add(const LoadDashboardDataEvent());
+      final bloc = context.read<DashboardBloc>();
+      bloc.add(const LoadDashboardDataEvent());
+      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 5));
+      print('✅ Dashboard recargado (DashboardLoaded recibido)');
       
-      // Pequeña pausa para dar tiempo al backend a procesar y al Bloc a recargar
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      print('✅ Dashboard recargado');
+      // Esperar un frame para que Flutter procese el cambio de estado
+      await Future.delayed(const Duration(milliseconds: 100));
       
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShownNew) {
+        rootNavigator.pop();
+        loaderShownNew = false;
+      }
       
       // Mostrar éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('✅ Nueva fuente "$name" creada y ingreso categorizado'),
           backgroundColor: AppColors.green,
           duration: const Duration(seconds: 3),
@@ -677,62 +959,138 @@ class _DashboardContent extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShownNew) {
+        rootNavigator.pop();
+        loaderShownNew = false;
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('Error al crear fuente de ingreso: $e'),
           backgroundColor: AppColors.red,
           duration: const Duration(seconds: 4),
         ),
       );
+    } finally {
+      if (loaderShownNew) {
+        try { rootNavigator.pop(); } catch (_) {}
+      }
     }
   }
 
   Future<void> _categorizeIncomeTransaction(BuildContext context, String transactionId, int incomeSourceId) async {
     final datasource = getIt<DashboardRemoteDataSource>();
     
-    try {
-      // Mostrar loading
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Categorizando ingreso...')),
-        );
-      }
+    var loaderShownInc = false;
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    
+    // Mostrar loading dialog
+    if (context.mounted) {
+      loaderShownInc = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        useRootNavigator: true,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Categorizando ingreso...',
+                    style: AppTextStyles.bodyMedium(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
+    try {
+      print('🔵 Categorizando ingreso...');
+      
       // Categorizar ingreso
       await datasource.categorizeIncomeTransaction(
         transactionId: transactionId,
         incomeSourceId: incomeSourceId,
       );
+      
+      print('✅ Ingreso categorizado en el servidor');
 
       if (!context.mounted) return;
 
-      // Recargar dashboard y esperar un momento para que se procese
-      print('🔄 Recargando dashboard...');
-      context.read<DashboardBloc>().add(const LoadDashboardDataEvent());
+      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
+      print('🔄 Recargando dashboard después de categorizar ingreso...');
+      final bloc = context.read<DashboardBloc>();
+      bloc.add(const LoadDashboardDataEvent());
       
-      // Pequeña pausa para dar tiempo al backend a procesar y al Bloc a recargar
-      await Future.delayed(const Duration(milliseconds: 500));
+      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 10));
+      print('✅ Dashboard recargado (DashboardLoaded recibido)');
       
-      print('✅ Dashboard recargado');
+      // Esperar un frame para que Flutter procese el cambio de estado
+      await Future.delayed(const Duration(milliseconds: 100));
       
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShownInc) {
+        rootNavigator.pop();
+        loaderShownInc = false;
+      }
+      
+      print('✅ Mostrando mensaje de éxito para ingreso');
       
       // Mostrar éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Ingreso categorizado correctamente'),
+          behavior: SnackBarBehavior.fixed,
+          content: Text('✅ Ingreso categorizado - presupuesto actualizado'),
           backgroundColor: AppColors.green,
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 3),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Error al categorizar ingreso: $e');
+      print('📚 StackTrace: $stackTrace');
+      
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShownInc) {
+        rootNavigator.pop();
+        loaderShownInc = false;
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('Error al categorizar ingreso: $e'),
           backgroundColor: AppColors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
+    } finally {
+      if (loaderShownInc) {
+        try { 
+          rootNavigator.pop(); 
+        } catch (_) {
+          print('⚠️ Error cerrando loader (ya cerrado)');
+        }
+      }
     }
   }
 
@@ -740,18 +1098,47 @@ class _DashboardContent extends StatelessWidget {
     BuildContext context, 
     String transactionId, 
     int categoryId, 
-    int fixedExpenseId,
-  ) async {
+    int fixedExpenseId, {
+    CategoryBudgetTrackingModel? tracking,
+  }) async {
     final datasource = getIt<DashboardRemoteDataSource>();
     
-    try {
-      // Mostrar loading
+    var loaderShownExp = false;
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    // Mostrar loading dialog
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Categorizando gasto...')),
+      loaderShownExp = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        useRootNavigator: true,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Categorizando gasto...',
+                    style: AppTextStyles.bodyMedium(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         );
       }
 
+    try {
       // Categorizar gasto vinculado a FixedExpense
       await datasource.categorizeTransaction(
         transactionId: transactionId,
@@ -762,20 +1149,30 @@ class _DashboardContent extends StatelessWidget {
 
       if (!context.mounted) return;
 
-      // Recargar dashboard y esperar un momento para que se procese
+      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
       print('🔄 Recargando dashboard...');
-      context.read<DashboardBloc>().add(const LoadDashboardDataEvent());
+      final bloc = context.read<DashboardBloc>();
+      bloc.add(const LoadDashboardDataEvent());
+      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 5));
+      print('✅ Dashboard recargado (DashboardLoaded recibido)');
       
-      // Pequeña pausa para dar tiempo al backend a procesar y al Bloc a recargar
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      print('✅ Dashboard recargado');
+      // Esperar un frame para que Flutter procese el cambio de estado
+      await Future.delayed(const Duration(milliseconds: 100));
       
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShownExp) {
+        rootNavigator.pop();
+        loaderShownExp = false;
+      }
+      
+      // Ya no preguntamos si volverá a gastar - las categorías permanecen abiertas
       
       // Mostrar éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('✅ Gasto categorizado y vinculado al presupuesto'),
           backgroundColor: AppColors.green,
           duration: Duration(seconds: 2),
@@ -783,14 +1180,27 @@ class _DashboardContent extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
+      
+      // Cerrar loading dialog
+      if (loaderShownExp) {
+        rootNavigator.pop();
+        loaderShownExp = false;
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.fixed,
           content: Text('Error al categorizar gasto: $e'),
           backgroundColor: AppColors.red,
         ),
       );
+    } finally {
+      if (loaderShownExp) {
+        try { rootNavigator.pop(); } catch (_) {}
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -798,6 +1208,24 @@ class _DashboardContent extends StatelessWidget {
     final now = DateTime.now();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final daysRemaining = daysInMonth - now.day;
+    final double firstRowCardHeight = 140; // altura uniforme para la primera fila
+    // Estado visual: basado en el BALANCE DISPONIBLE
+    const epsilon = 0.01;
+    final BudgetStatus statusForChip;
+    if (budget.balance < -epsilon) {
+      // Balance negativo → ROJO
+      statusForChip = BudgetStatus.danger;
+    } else if (budget.balance >= -epsilon && budget.balance <= epsilon) {
+      // Balance cero → GRIS
+      statusForChip = BudgetStatus.neutral;
+    } else {
+      // Balance positivo → estado normal del presupuesto
+      statusForChip = state.budgetSummary.budgetStatus;
+    }
+    
+    // DEBUG
+    print('🔵 [DASHBOARD] balance: ${budget.balance}');
+    print('🔵 [DASHBOARD] statusForChip: $statusForChip');
 
     return CustomScrollView(
       slivers: [
@@ -876,6 +1304,23 @@ class _DashboardContent extends StatelessWidget {
                       ),
                       const PopupMenuDivider(),
                       PopupMenuItem<String>(
+                        value: 'reset_categorizations',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.refresh, size: 20, color: AppColors.orange),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Text(
+                                'Resetear categorizaciones',
+                                style: AppTextStyles.bodyMedium(color: AppColors.orange),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
                         value: 'logout',
                         child: Row(
                           children: [
@@ -895,6 +1340,8 @@ class _DashboardContent extends StatelessWidget {
                     onSelected: (value) {
                       if (value == 'logout') {
                         _showLogoutDialog(context);
+                      } else if (value == 'reset_categorizations') {
+                        _confirmAndResetCategorizations(context);
                       }
                     },
                   );
@@ -917,27 +1364,38 @@ class _DashboardContent extends StatelessWidget {
                 children: [
                   // Balance Disponible
                   Expanded(
+                    child: SizedBox(
+                      height: firstRowCardHeight,
                     child: EditableBalanceCard(
                       balance: budget.balance,
                       onEdit: () {
                         // TODO: Implementar edición
                       },
+                      ),
                     ),
                   ),
                   AppSpacing.horizontalMd,
-                  // Ten Cuidado (Estado del Presupuesto)
-                  Expanded(
+                  // Estado del Presupuesto (compacto)
+                  SizedBox(
+                    width: 180,
+                    height: firstRowCardHeight,
                     child: BudgetStatusIndicator(
-                      status: budget.budgetStatus,
-                      monthProgress: budget.monthProgress,
+                      key: ValueKey('budget_status_${budget.balance}_$daysRemaining'),
+                      status: statusForChip,
+                      daysRemaining: daysRemaining,
                     ),
                   ),
                   AppSpacing.horizontalMd,
                   // Para Sobrevivir al Mes
                   Expanded(
+                    child: SizedBox(
+                      height: firstRowCardHeight,
                     child: RemainingBalanceCard(
+                        key: ValueKey('remaining_balance_${budget.balance}_${budget.remainingForMonth}_$daysRemaining'),
                       remainingForMonth: budget.remainingForMonth,
                       daysRemaining: daysRemaining,
+                        balance: budget.balance,
+                      ),
                     ),
                   ),
                 ],
@@ -945,21 +1403,11 @@ class _DashboardContent extends StatelessWidget {
 
               AppSpacing.verticalXl,
 
-              // Segunda Fila: Resumen y Últimas 3 Transacciones (2 columnas)
+              // Segunda Fila: Transacciones por Categorizar y Gastos por Categoría (2 columnas)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Resumen
-                  Expanded(
-                    child: _QuickStatsCard(
-                      actualIncome: budget.actualIncome,
-                      actualExpenses: budget.actualExpenses,
-                      theoreticalExpenses: budget.theoreticalExpenses,
-                      monthProgress: budget.monthProgress,
-                    ),
-                  ),
-                  AppSpacing.horizontalMd,
-                  // Últimas 3 Transacciones
+                  // Transacciones por Categorizar
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,161 +1419,90 @@ class _DashboardContent extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.receipt_long, color: AppColors.teal, size: 20),
+                                  Icon(
+                                    Icons.category_outlined, 
+                                    color: _getPendingCategorizationTransactions().isEmpty 
+                                      ? AppColors.green 
+                                      : AppColors.orange, 
+                                    size: 20
+                                  ),
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(
-                                      'Recientes', 
+                                      'Por Categorizar', 
                                       style: AppTextStyles.h5().copyWith(fontWeight: FontWeight.w600),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                context.push(RouteNames.transactions);
-                              },
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: const Size(0, 0),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Ver Todas', 
-                                    style: AppTextStyles.caption(color: AppColors.teal).copyWith(
-                                      fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 8),
+                                  if (_getPendingCategorizationTransactions().isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.orange.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${_getPendingCategorizationTransactions().length}',
+                                        style: AppTextStyles.caption(color: AppColors.orange).copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.teal),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                        AppSpacing.verticalSm,
-                        if (state.recentTransactions.isEmpty)
-                          Container(
-                            padding: AppSpacing.paddingMd,
-                            decoration: BoxDecoration(
-                              color: AppColors.gray50,
-                              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                            ),
-                            child: Column(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.receipt_long_outlined,
-                                  size: 32,
-                                  color: AppColors.gray400,
-                                ),
-                                AppSpacing.verticalSm,
-                                Text(
-                                  'Sin transacciones',
-                                  style: AppTextStyles.bodyMedium(color: AppColors.gray600),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Agrega tu primera transacción',
-                                  style: AppTextStyles.caption(color: AppColors.gray500),
-                                  textAlign: TextAlign.center,
+                                // Botón de ordenamiento
+                                if (_getPendingCategorizationTransactions().isNotEmpty)
+                                  IconButton(
+                                    onPressed: () {
+                                      final currentOrdering = state.pendingTransactionsOrdering;
+                                      final newOrdering = currentOrdering == 'asc' ? 'desc' : 'asc';
+                                      context.read<DashboardBloc>().add(
+                                        ChangePendingTransactionsOrderingEvent(newOrdering),
+                                      );
+                                    },
+                                    icon: Icon(
+                                      state.pendingTransactionsOrdering == 'asc' 
+                                        ? Icons.arrow_upward 
+                                        : Icons.arrow_downward,
+                                      size: 16,
+                                      color: AppColors.gray600,
+                                    ),
+                                    tooltip: state.pendingTransactionsOrdering == 'asc'
+                                      ? 'Más viejas primero'
+                                      : 'Más nuevas primero',
+                                    padding: const EdgeInsets.all(4),
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                TextButton(
+                                  onPressed: () {
+                                    context.push(RouteNames.transactions);
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    minimumSize: const Size(0, 0),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Ver Todas', 
+                                        style: AppTextStyles.caption(color: AppColors.teal).copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.teal),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                          )
-                        else
-                          ...state.recentTransactions.take(3).map((transaction) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: TransactionCard(
-                                title: transaction.description,
-                                category: transaction.category,
-                                amount: transaction.amount,
-                                date: transaction.date,
-                                isIncome: transaction.isIncome,
-                                onTap: () {
-                                  // TODO: Navegar a detalle
-                                },
-                              ),
-                            );
-                          }),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              AppSpacing.verticalXl,
-
-              // Tercera Fila: Gastos por Categoría y Transacciones por Categorizar (2 columnas)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Gastos por Categoría
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.category, color: AppColors.teal, size: 20),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Por Categoría', 
-                                style: AppTextStyles.h5().copyWith(fontWeight: FontWeight.w600),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.verticalSm,
-                        CategoryBreakdownList(categories: budget.categoriesBreakdown),
-                      ],
-                    ),
-                  ),
-                  AppSpacing.horizontalMd,
-                  // Transacciones por Categorizar
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.category_outlined, 
-                              color: _getPendingCategorizationTransactions().isEmpty 
-                                ? AppColors.green 
-                                : AppColors.orange, 
-                              size: 20
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Por Categorizar', 
-                                style: AppTextStyles.h5().copyWith(fontWeight: FontWeight.w600),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (_getPendingCategorizationTransactions().isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.orange.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${_getPendingCategorizationTransactions().length}',
-                                  style: AppTextStyles.caption(color: AppColors.orange).copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                         AppSpacing.verticalSm,
@@ -1205,7 +1582,14 @@ class _DashboardContent extends StatelessWidget {
                           ],
                         ),
                         AppSpacing.verticalSm,
-                        ..._getPendingCategorizationTransactions().take(3).map((transaction) {
+                                  // Lista con scroll para mostrar todas las transacciones
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(maxHeight: 300),
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: _getPendingCategorizationTransactions().length,
+                                      itemBuilder: (context, index) {
+                                        final transaction = _getPendingCategorizationTransactions()[index];
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: InkWell(
@@ -1293,6 +1677,14 @@ class _DashboardContent extends StatelessWidget {
                                           style: AppTextStyles.bodyMedium().copyWith(
                                             fontWeight: FontWeight.bold,
                                             color: transaction.isIncome ? AppColors.green : AppColors.red,
+                                                        ),
+                                                      ),
+                                                      if (transaction.originalCurrency != null && transaction.originalCurrency != 'GTQ' && transaction.originalAmount != null)
+                                                        Padding(
+                                                          padding: const EdgeInsets.only(top: 2),
+                                                          child: Text(
+                                                            Formatters.currencyWithCode(transaction.originalCurrency!, transaction.originalAmount!),
+                                                            style: AppTextStyles.caption(color: AppColors.gray600),
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -1304,10 +1696,36 @@ class _DashboardContent extends StatelessWidget {
                               ),
                             ),
                           );
-                        }),
+                                      },
+                                    ),
+                                  ),
                       ],
                     ),
                         ),
+                        ],
+                      ),
+                    ),
+                  AppSpacing.horizontalMd,
+                  // Gastos por Categoría
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.category, color: AppColors.teal, size: 20),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Por Categoría', 
+                                style: AppTextStyles.h5().copyWith(fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        AppSpacing.verticalSm,
+                        CategoryBreakdownList(categories: budget.categoriesBreakdown),
                       ],
                     ),
                   ),
@@ -1395,198 +1813,5 @@ class _DashboardContent extends StatelessWidget {
     };
     
     return iconMap[iconName] ?? Icons.category;
-  }
-}
-
-/// Widget de Estadísticas Rápidas
-class _QuickStatsCard extends StatelessWidget {
-  final double actualIncome;
-  final double actualExpenses;
-  final double theoreticalExpenses;
-  final double monthProgress;
-
-  const _QuickStatsCard({
-    required this.actualIncome,
-    required this.actualExpenses,
-    required this.theoreticalExpenses,
-    required this.monthProgress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final percentSpent = theoreticalExpenses > 0
-        ? (actualExpenses / theoreticalExpenses * 100).clamp(0, 100)
-        : 0.0;
-    final percentMonth = (monthProgress * 100).clamp(0, 100);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Título
-          Row(
-            children: [
-              Icon(Icons.analytics_outlined, size: 20, color: AppColors.teal),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Resumen',
-                  style: AppTextStyles.h5().copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          AppSpacing.verticalMd,
-          
-          // Ingresos
-          _StatRow(
-            icon: Icons.arrow_downward,
-            iconColor: AppColors.green,
-            label: 'Ingresos',
-            value: Formatters.currency(actualIncome),
-            valueColor: AppColors.green,
-          ),
-          AppSpacing.verticalSm,
-          
-          // Gastos
-          _StatRow(
-            icon: Icons.arrow_upward,
-            iconColor: AppColors.red,
-            label: 'Gastos',
-            value: Formatters.currency(actualExpenses),
-            valueColor: AppColors.red,
-          ),
-          AppSpacing.verticalMd,
-          
-          // Progreso vs Tiempo
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: percentSpent > percentMonth 
-                  ? AppColors.redLight 
-                  : AppColors.greenLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Gastado',
-                        style: AppTextStyles.bodySmall().copyWith(
-                          color: AppColors.gray600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${percentSpent.toStringAsFixed(0)}%',
-                      style: AppTextStyles.bodySmall().copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: percentSpent > percentMonth 
-                            ? AppColors.red 
-                            : AppColors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                AppSpacing.verticalXs,
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Mes transcurrido',
-                        style: AppTextStyles.bodySmall().copyWith(
-                          color: AppColors.gray600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${percentMonth.toStringAsFixed(0)}%',
-                      style: AppTextStyles.bodySmall().copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.gray700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Widget auxiliar para una fila de estadística
-class _StatRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String value;
-  final Color valueColor;
-
-  const _StatRow({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.value,
-    required this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: iconColor),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.gray600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: AppTextStyles.bodyMedium().copyWith(
-            fontWeight: FontWeight.w600,
-            color: valueColor,
-          ),
-        ),
-      ],
-    );
   }
 }

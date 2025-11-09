@@ -1,0 +1,491 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quho_app/core/config/app_config.dart';
+import 'package:quho_app/core/routes/route_names.dart';
+import 'package:quho_app/core/utils/formatters.dart';
+import 'package:quho_app/features/transactions/presentation/bloc/transactions_bloc.dart';
+import 'package:quho_app/features/transactions/presentation/bloc/transactions_event.dart';
+import 'package:quho_app/features/transactions/presentation/bloc/transactions_state.dart';
+import 'package:quho_app/features/transactions/presentation/widgets/filter_bottom_sheet.dart';
+import 'package:quho_app/features/transactions/presentation/widgets/transaction_grid_card.dart';
+import 'package:quho_app/features/transactions/presentation/widgets/transaction_detail_bottom_sheet.dart';
+import 'package:quho_app/shared/design_system/design_system.dart';
+
+/// Página de transacciones con filtros y búsqueda
+class TransactionsPage extends StatefulWidget {
+  const TransactionsPage({super.key});
+
+  @override
+  State<TransactionsPage> createState() => _TransactionsPageState();
+}
+
+class _TransactionsPageState extends State<TransactionsPage> {
+  final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _showFilterSheet(BuildContext blocContext) {
+    final currentState = blocContext.read<TransactionsBloc>().state;
+    String? currentType;
+    String? currentCategory;
+    DateTime? currentStartDate;
+    DateTime? currentEndDate;
+
+    if (currentState is TransactionsLoaded) {
+      currentType = currentState.currentType;
+      currentCategory = currentState.currentCategory;
+      currentStartDate = currentState.currentStartDate;
+      currentEndDate = currentState.currentEndDate;
+    }
+
+    showModalBottomSheet(
+      context: blocContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FilterBottomSheet(
+        initialType: currentType,
+        initialCategory: currentCategory,
+        initialStartDate: currentStartDate,
+        initialEndDate: currentEndDate,
+        onApply: (type, category, startDate, endDate) {
+          blocContext.read<TransactionsBloc>().add(
+                ApplyFiltersEvent(
+                  type: type,
+                  category: category,
+                  startDate: startDate,
+                  endDate: endDate,
+                ),
+              );
+        },
+      ),
+    );
+  }
+
+  void _clearFilters(BuildContext blocContext) {
+    blocContext.read<TransactionsBloc>().add(const ClearFiltersEvent());
+    _searchController.clear();
+  }
+
+  void _onSearchChanged(String query, BuildContext blocContext) {
+    blocContext.read<TransactionsBloc>().add(SearchTransactionsEvent(query));
+  }
+
+  void _showTransactionDetail(BuildContext context, transaction) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TransactionDetailBottomSheet(
+        transaction: transaction,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => getIt<TransactionsBloc>()
+        ..add(const LoadTransactionsEvent(page: 1, isRefresh: true)),
+      child: Builder(
+        builder: (blocContext) => Scaffold(
+        backgroundColor: AppColors.gray50,
+        appBar: AppBar(
+          backgroundColor: AppColors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.gray900),
+            onPressed: () => blocContext.pop(),
+          ),
+          title: _isSearching
+              ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Buscar transacciones...',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (query) => _onSearchChanged(query, blocContext),
+                )
+              : Text(
+                  'Transacciones',
+                  style: AppTextStyles.h4().copyWith(color: AppColors.gray900),
+                ),
+          actions: [
+            if (_isSearching)
+              IconButton(
+                icon: const Icon(Icons.close, color: AppColors.gray900),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchController.clear();
+                  });
+                  blocContext.read<TransactionsBloc>().add(const SearchTransactionsEvent(''));
+                },
+              )
+            else ...[
+              IconButton(
+                icon: const Icon(Icons.search, color: AppColors.gray900),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = true;
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.filter_list, color: AppColors.gray900),
+                onPressed: () => _showFilterSheet(blocContext),
+              ),
+            ],
+          ],
+        ),
+        body: BlocBuilder<TransactionsBloc, TransactionsState>(
+          builder: (blocBuilderContext, state) {
+            if (state is TransactionsLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.teal),
+              );
+            }
+
+            if (state is TransactionsError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppColors.red,
+                    ),
+                    AppSpacing.verticalMd,
+                    Text(
+                      'Error al cargar transacciones',
+                      style: AppTextStyles.h5(),
+                    ),
+                    AppSpacing.verticalSm,
+                    Text(
+                      state.message,
+                      style: AppTextStyles.bodySmall(color: AppColors.gray600),
+                      textAlign: TextAlign.center,
+                    ),
+                    AppSpacing.verticalMd,
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        blocBuilderContext.read<TransactionsBloc>().add(
+                              const LoadTransactionsEvent(page: 1, isRefresh: true),
+                            );
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.teal,
+                        foregroundColor: AppColors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (state is TransactionsLoaded) {
+              return Column(
+                children: [
+                  // Filtros activos
+                  if (state.hasActiveFilters)
+                    Container(
+                      width: double.infinity,
+                      padding: AppSpacing.paddingMd,
+                      color: AppColors.white,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (state.currentType != null)
+                            _FilterChip(
+                              label: state.currentType == 'income' ? 'Ingresos' : 'Gastos',
+                              onDeleted: () {
+                                blocBuilderContext.read<TransactionsBloc>().add(
+                                      ApplyFiltersEvent(
+                                        category: state.currentCategory,
+                                        startDate: state.currentStartDate,
+                                        endDate: state.currentEndDate,
+                                      ),
+                                    );
+                              },
+                            ),
+                          if (state.currentCategory != null)
+                            _FilterChip(
+                              label: state.currentCategory!,
+                              onDeleted: () {
+                                blocBuilderContext.read<TransactionsBloc>().add(
+                                      ApplyFiltersEvent(
+                                        type: state.currentType,
+                                        startDate: state.currentStartDate,
+                                        endDate: state.currentEndDate,
+                                      ),
+                                    );
+                              },
+                            ),
+                          if (state.currentStartDate != null || state.currentEndDate != null)
+                            _FilterChip(
+                              label: _getDateRangeLabel(
+                                state.currentStartDate,
+                                state.currentEndDate,
+                              ),
+                              onDeleted: () {
+                                blocBuilderContext.read<TransactionsBloc>().add(
+                                      ApplyFiltersEvent(
+                                        type: state.currentType,
+                                        category: state.currentCategory,
+                                      ),
+                                    );
+                              },
+                            ),
+                          TextButton.icon(
+                            onPressed: () => _clearFilters(blocBuilderContext),
+                            icon: const Icon(Icons.clear_all, size: 16),
+                            label: const Text('Limpiar'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.red,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Cuadrícula de transacciones
+                  Expanded(
+                    child: state.transactions.isEmpty
+                        ? _buildEmptyState(state.hasActiveFilters, blocBuilderContext)
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              blocBuilderContext.read<TransactionsBloc>().add(
+                                    LoadTransactionsEvent(
+                                      page: 1,
+                                      type: state.currentType,
+                                      category: state.currentCategory,
+                                      startDate: state.currentStartDate,
+                                      endDate: state.currentEndDate,
+                                      search: state.currentSearch,
+                                      isRefresh: true,
+                                    ),
+                                  );
+                            },
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                // Grid adaptativo según el ancho de pantalla
+                                int crossAxisCount;
+                                if (constraints.maxWidth > 1200) {
+                                  crossAxisCount = 5; // Desktop grande
+                                } else if (constraints.maxWidth > 900) {
+                                  crossAxisCount = 4; // Desktop mediano
+                                } else if (constraints.maxWidth > 600) {
+                                  crossAxisCount = 3; // Tablet
+                                } else {
+                                  crossAxisCount = 2; // Móvil
+                                }
+
+                                return CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: AppSpacing.paddingMd,
+                                      sliver: SliverGrid(
+                                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: crossAxisCount,
+                                          childAspectRatio: 1.0,
+                                          crossAxisSpacing: 8,
+                                          mainAxisSpacing: 8,
+                                        ),
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) {
+                                        final transaction = state.transactions[index];
+                                        return TransactionGridCard(
+                                          title: transaction.description,
+                                          category: transaction.category,
+                                          amount: transaction.amount,
+                                          date: transaction.date,
+                                          isIncome: transaction.isIncome,
+                                          originalCurrency: transaction.originalCurrency,
+                                          originalAmount: transaction.originalAmount,
+                                          onTap: () => _showTransactionDetail(
+                                            blocBuilderContext,
+                                            transaction,
+                                          ),
+                                        );
+                                      },
+                                      childCount: state.transactions.length,
+                                    ),
+                                  ),
+                                ),
+                                // Indicador de carga al final con detección automática
+                                if (state.hasMore)
+                                  SliverToBoxAdapter(
+                                    child: _LoadMoreWidget(
+                                      hasMore: state.hasMore,
+                                      isLoadingMore: state.isLoadingMore,
+                                                  onLoadMore: () {
+                                           blocBuilderContext.read<TransactionsBloc>().add(
+                                             const LoadMoreTransactionsEvent(),
+                                           );
+                                         },
+                                       ),
+                                     ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                  ),
+                ],
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            blocContext.push(RouteNames.addTransaction);
+          },
+          backgroundColor: AppColors.teal,
+          foregroundColor: AppColors.white,
+          icon: const Icon(Icons.add),
+          label: const Text('Agregar'),
+        ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool hasFilters, BuildContext blocBuilderContext) {
+    return Center(
+      child: Padding(
+        padding: AppSpacing.paddingXl,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              hasFilters ? Icons.search_off : Icons.receipt_long_outlined,
+              size: 80,
+              color: AppColors.gray400,
+            ),
+            AppSpacing.verticalMd,
+            Text(
+              hasFilters ? 'No se encontraron transacciones' : 'Sin transacciones',
+              style: AppTextStyles.h5(),
+              textAlign: TextAlign.center,
+            ),
+            AppSpacing.verticalSm,
+            Text(
+              hasFilters
+                  ? 'Intenta ajustar los filtros o busca algo diferente'
+                  : 'Agrega tu primera transacción para comenzar',
+              style: AppTextStyles.bodyMedium(color: AppColors.gray600),
+              textAlign: TextAlign.center,
+            ),
+            if (hasFilters) ...[
+              AppSpacing.verticalMd,
+              TextButton.icon(
+                onPressed: () => _clearFilters(blocBuilderContext),
+                icon: const Icon(Icons.clear_all),
+                label: const Text('Limpiar filtros'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.teal,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getDateRangeLabel(DateTime? startDate, DateTime? endDate) {
+    if (startDate != null && endDate != null) {
+      return '${Formatters.shortDate(startDate)} - ${Formatters.shortDate(endDate)}';
+    } else if (startDate != null) {
+      return 'Desde ${Formatters.shortDate(startDate)}';
+    } else if (endDate != null) {
+      return 'Hasta ${Formatters.shortDate(endDate)}';
+    }
+    return '';
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onDeleted;
+
+  const _FilterChip({
+    required this.label,
+    required this.onDeleted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 16),
+      onDeleted: onDeleted,
+      backgroundColor: AppColors.teal.withOpacity(0.1),
+      labelStyle: AppTextStyles.caption(color: AppColors.teal),
+      deleteIconColor: AppColors.teal,
+      side: BorderSide.none,
+    );
+  }
+}
+
+/// Widget que muestra el indicador de carga y tiene un botón para cargar más
+class _LoadMoreWidget extends StatelessWidget {
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback onLoadMore;
+
+  const _LoadMoreWidget({
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onLoadMore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hasMore) return const SizedBox.shrink();
+    
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: isLoadingMore
+            ? const CircularProgressIndicator(
+                color: AppColors.teal,
+              )
+            : ElevatedButton.icon(
+                onPressed: onLoadMore,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Cargar más'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: AppColors.white,
+                ),
+              ),
+      ),
+    );
+  }
+}
+

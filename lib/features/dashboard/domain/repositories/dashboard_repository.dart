@@ -17,7 +17,7 @@ abstract class DashboardRepository {
   });
 
   /// Obtener transacciones pendientes de categorización
-  Future<Either<Failure, List<Transaction>>> getPendingCategorizationTransactions();
+  Future<Either<Failure, List<Transaction>>> getPendingCategorizationTransactions({String ordering = 'asc'});
 
   /// Obtener consejos de presupuesto del usuario
   Future<Either<Failure, List<BudgetAdvice>>> getBudgetAdvice();

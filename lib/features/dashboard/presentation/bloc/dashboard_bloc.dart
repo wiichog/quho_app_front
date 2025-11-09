@@ -25,6 +25,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     on<LoadDashboardDataEvent>(_onLoadDashboardData);
     on<RefreshDashboardEvent>(_onRefreshDashboard);
     on<UpdateBalanceEvent>(_onUpdateBalance);
+    on<ChangePendingTransactionsOrderingEvent>(_onChangePendingTransactionsOrdering);
   }
 
   /// Cargar datos del dashboard
@@ -129,6 +130,34 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     // Por ahora solo recargamos los datos
     print('[BLOC] 📝 Balance actualizado a: ${event.newBalance}');
     add(const LoadDashboardDataEvent());
+  }
+
+  /// Cambiar ordenamiento de transacciones pendientes
+  Future<void> _onChangePendingTransactionsOrdering(
+    ChangePendingTransactionsOrderingEvent event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! DashboardLoaded) return;
+
+    print('[BLOC] 🔄 Cambiando ordenamiento de transacciones pendientes a: ${event.ordering}');
+
+    // Obtener las transacciones con el nuevo ordenamiento
+    final result = await getPendingCategorizationTransactionsUseCase(ordering: event.ordering);
+
+    result.fold(
+      (failure) {
+        print('[BLOC] ❌ Error al cambiar ordenamiento: ${failure.message}');
+        // Mantener el estado actual si hay error
+      },
+      (transactions) {
+        print('[BLOC] ✅ Transacciones pendientes reordenadas: ${transactions.length}');
+        emit(currentState.copyWith(
+          pendingCategorizationTransactions: transactions,
+          pendingTransactionsOrdering: event.ordering,
+        ));
+      },
+    );
   }
 }
 

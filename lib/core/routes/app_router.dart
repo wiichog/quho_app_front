@@ -13,6 +13,7 @@ import 'package:quho_app/features/auth/presentation/pages/verify_email_page.dart
 import 'package:quho_app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:quho_app/features/onboarding/presentation/pages/conversational_onboarding_page.dart';
 import 'package:quho_app/features/finances/presentation/pages/finances_page.dart';
+import 'package:quho_app/features/transactions/presentation/pages/transactions_page.dart';
 
 /// Configuración de rutas de la aplicación con GoRouter
 class AppRouter {
@@ -320,17 +321,8 @@ class PlaceholderDashboardPage extends StatelessWidget {
   }
 }
 
-class TransactionsPage extends StatelessWidget {
-  const TransactionsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Transactions')),
-      body: const Center(child: Text('Transactions Page - TODO')),
-    );
-  }
-}
+// TransactionsPage ahora se importa desde features/transactions
+// Ver: lib/features/transactions/presentation/pages/transactions_page.dart
 
 class TransactionDetailPage extends StatelessWidget {
   final String transactionId;

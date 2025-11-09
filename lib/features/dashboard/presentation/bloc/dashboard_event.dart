@@ -28,3 +28,13 @@ class UpdateBalanceEvent extends DashboardEvent {
   List<Object?> get props => [newBalance];
 }
 
+/// Evento para cambiar el ordenamiento de las transacciones pendientes
+class ChangePendingTransactionsOrderingEvent extends DashboardEvent {
+  final String ordering; // 'asc' o 'desc'
+
+  const ChangePendingTransactionsOrderingEvent(this.ordering);
+
+  @override
+  List<Object?> get props => [ordering];
+}
+

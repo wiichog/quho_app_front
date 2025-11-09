@@ -83,10 +83,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
   }
 
   @override
-  Future<Either<Failure, List<Transaction>>> getPendingCategorizationTransactions() async {
+  Future<Either<Failure, List<Transaction>>> getPendingCategorizationTransactions({String ordering = 'asc'}) async {
     try {
-      print('🔵 [REPOSITORY] Obteniendo transacciones pendientes de categorización');
-      final result = await remoteDataSource.getPendingCategorizationTransactions();
+      print('🔵 [REPOSITORY] Obteniendo transacciones pendientes de categorización (ordering: $ordering)');
+      final result = await remoteDataSource.getPendingCategorizationTransactions(ordering: ordering);
       
       print('✅ [REPOSITORY] Convirtiendo ${result.length} transacciones pendientes a entidades');
       final entities = result.map((model) => model.toEntity()).toList();

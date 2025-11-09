@@ -19,6 +19,12 @@ class TransactionModel extends Transaction {
     super.suggestedCategory,
     super.incomeSourceId,
     super.incomeSourceName,
+    super.originalCurrency,
+    super.originalAmount,
+    super.exchangeRate,
+    super.relatedTransactionId,
+    super.fromAccount,
+    super.toAccount,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -84,6 +90,32 @@ class TransactionModel extends Transaction {
       if (incomeSourceId != null) {
         print('📦 [MODEL] income_source: $incomeSourceName (ID: $incomeSourceId)');
       }
+
+      // Moneda original (para transacciones internacionales)
+      final originalCurrency = json['original_currency'] as String?;
+      final originalAmountRaw = json['original_amount'];
+      final exchangeRateRaw = json['exchange_rate'];
+      final originalAmount = originalAmountRaw == null
+          ? null
+          : (originalAmountRaw is String
+              ? double.tryParse(originalAmountRaw)
+              : (originalAmountRaw as num).toDouble());
+      final exchangeRate = exchangeRateRaw == null
+          ? null
+          : (exchangeRateRaw is String
+              ? double.tryParse(exchangeRateRaw)
+              : (exchangeRateRaw as num).toDouble());
+      if (originalCurrency != null && originalAmount != null) {
+        print('📦 [MODEL] original: $originalCurrency $originalAmount (rate: ${exchangeRate ?? '-'} )');
+      }
+      
+      // Parsear transfer fields
+      final relatedTransactionId = json['related_transaction_id']?.toString();
+      final fromAccount = json['from_account'] as String?;
+      final toAccount = json['to_account'] as String?;
+      if (type == 'transfer') {
+        print('📦 [MODEL] transfer: $fromAccount → $toAccount');
+      }
       
       print('✅ [MODEL] TransactionModel parseado correctamente');
       
@@ -101,6 +133,12 @@ class TransactionModel extends Transaction {
         suggestedCategory: suggestedCategory,
         incomeSourceId: incomeSourceId,
         incomeSourceName: incomeSourceName,
+        originalCurrency: originalCurrency,
+        originalAmount: originalAmount,
+        exchangeRate: exchangeRate,
+        relatedTransactionId: relatedTransactionId,
+        fromAccount: fromAccount,
+        toAccount: toAccount,
       );
     } catch (e, stackTrace) {
       print('❌ [MODEL] Error parseando TransactionModel: $e');
@@ -137,6 +175,12 @@ class TransactionModel extends Transaction {
       suggestedCategory: suggestedCategory,
       incomeSourceId: incomeSourceId,
       incomeSourceName: incomeSourceName,
+      originalCurrency: originalCurrency,
+      originalAmount: originalAmount,
+      exchangeRate: exchangeRate,
+      relatedTransactionId: relatedTransactionId,
+      fromAccount: fromAccount,
+      toAccount: toAccount,
     );
   }
 }

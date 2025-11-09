@@ -9,8 +9,8 @@ class GetPendingCategorizationTransactionsUseCase {
 
   GetPendingCategorizationTransactionsUseCase(this.repository);
 
-  Future<Either<Failure, List<Transaction>>> call() async {
-    return await repository.getPendingCategorizationTransactions();
+  Future<Either<Failure, List<Transaction>>> call({String ordering = 'asc'}) async {
+    return await repository.getPendingCategorizationTransactions(ordering: ordering);
   }
 }
 

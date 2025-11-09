@@ -4,18 +4,24 @@ import 'package:quho_app/shared/design_system/colors/app_colors.dart';
 import 'package:quho_app/shared/design_system/spacing/app_spacing.dart';
 import 'package:quho_app/shared/design_system/typography/app_text_styles.dart';
 
-class BudgetStatusIndicator extends StatelessWidget {
+class BudgetStatusIndicator extends StatefulWidget {
   final BudgetStatus status;
-  final double monthProgress;
+  final int daysRemaining;
 
   const BudgetStatusIndicator({
     super.key,
     required this.status,
-    required this.monthProgress,
+    required this.daysRemaining,
   });
 
+  @override
+  State<BudgetStatusIndicator> createState() => _BudgetStatusIndicatorState();
+}
+
+class _BudgetStatusIndicatorState extends State<BudgetStatusIndicator> {
+
   Color _getStatusColor() {
-    switch (status) {
+    switch (widget.status) {
       case BudgetStatus.good:
         return AppColors.green;
       case BudgetStatus.warning:
@@ -28,33 +34,33 @@ class BudgetStatusIndicator extends StatelessWidget {
   }
 
   String _getStatusText() {
-    switch (status) {
+    switch (widget.status) {
       case BudgetStatus.good:
-        return '¡Vas muy bien!';
+        return '¡Excelente!';
       case BudgetStatus.warning:
-        return 'Ten cuidado';
+        return 'Atención';
       case BudgetStatus.danger:
-        return '¡Alerta!';
+        return 'Presupuesto excedido';
       case BudgetStatus.neutral:
-        return 'Sin datos';
+        return 'Configura tu presupuesto';
     }
   }
 
   String _getStatusDescription() {
-    switch (status) {
+    switch (widget.status) {
       case BudgetStatus.good:
-        return 'Estás gastando menos de lo esperado';
+        return 'Ritmo de gastos saludable';
       case BudgetStatus.warning:
-        return 'Estás en el límite del presupuesto';
+        return 'Cerca del límite de presupuesto';
       case BudgetStatus.danger:
-        return 'Has excedido tu presupuesto';
+        return 'Has excedido el presupuesto';
       case BudgetStatus.neutral:
-        return 'Agrega datos para ver tu estado';
+        return 'Configura tu presupuesto';
     }
   }
 
   IconData _getStatusIcon() {
-    switch (status) {
+    switch (widget.status) {
       case BudgetStatus.good:
         return Icons.check_circle;
       case BudgetStatus.warning:
@@ -71,7 +77,7 @@ class BudgetStatusIndicator extends StatelessWidget {
     final statusColor = _getStatusColor();
 
     return Container(
-      padding: AppSpacing.paddingLg,
+      padding: AppSpacing.paddingSm,
       decoration: BoxDecoration(
         color: statusColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -82,44 +88,44 @@ class BudgetStatusIndicator extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: statusColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _getStatusIcon(),
-              color: AppColors.white,
-              size: 28,
-            ),
-          ),
-          AppSpacing.horizontalMd,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _getStatusText(),
-                  style: AppTextStyles.h5(color: statusColor).copyWith(
+          // Días restantes (número)
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  widget.daysRemaining.clamp(0, 99).toString(),
+                  style: AppTextStyles.caption(color: AppColors.white).copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                AppSpacing.verticalXs,
+              ),
+            ),
+          ),
+          AppSpacing.horizontalSm,
+          // Etiquetas compactas (se adaptan al ancho disponible)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  _getStatusDescription(),
-                  style: AppTextStyles.bodySmall(color: AppColors.gray700),
+                  _getStatusText(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySmall(color: statusColor).copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                AppSpacing.verticalXs,
-                LinearProgressIndicator(
-                  value: monthProgress,
-                  backgroundColor: statusColor.withOpacity(0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                ),
-                AppSpacing.verticalXxs,
                 Text(
-                  '${(monthProgress * 100).toInt()}% del mes transcurrido',
+                  'días restantes',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.caption(color: AppColors.gray600),
                 ),
               ],
@@ -130,5 +136,7 @@ class BudgetStatusIndicator extends StatelessWidget {
     );
   }
 }
+
+
 
 

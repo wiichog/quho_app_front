@@ -3,12 +3,18 @@ import 'package:intl/intl.dart';
 /// Utilidades para formatear valores en QUHO
 class Formatters {
   // Formatters de moneda
-  static final NumberFormat _currencyNumberFormat = NumberFormat('#,##0.00', 'es_GT');
+  // Guatemala usa: punto (.) para decimales y coma (,) para miles
+  // Ejemplo: Q1,234.56
+  static final NumberFormat _currencyNumberFormat = NumberFormat.currency(
+    locale: 'en_US', // Usa formato US que tiene punto decimal y coma miles
+    symbol: '',
+    decimalDigits: 2,
+  );
 
   static final NumberFormat _currencyFormatCompact = NumberFormat.compactCurrency(
     symbol: 'Q',
     decimalDigits: 0,
-    locale: 'es_GT',
+    locale: 'en_US',
   );
 
   /// Formatea un número como moneda: Q1,234.56
@@ -16,14 +22,20 @@ class Formatters {
     return 'Q${_currencyNumberFormat.format(amount)}';
   }
 
-  /// Formatea un número como moneda compacta: \$1.2K
+  /// Formatea un número como moneda compacta: Q1.2K
   static String currencyCompact(double amount) {
     return _currencyFormatCompact.format(amount);
   }
 
   /// Formatea un número como moneda sin símbolo: 1,234.56
   static String currencyWithoutSymbol(double amount) {
-    return NumberFormat('#,##0.00', 'es_MX').format(amount);
+    return _currencyNumberFormat.format(amount);
+  }
+
+  /// Formatea un monto con código de moneda: "USD 20.00", "GTQ 100.00"
+  static String currencyWithCode(String currencyCode, double amount) {
+    final formatted = NumberFormat('#,##0.00', 'en_US').format(amount);
+    return '$currencyCode $formatted';
   }
 
   // Formatters de fecha
@@ -58,6 +70,12 @@ class Formatters {
     return _dayMonthFormat.format(date);
   }
 
+  /// Formatea una fecha corta: 15 Mar 2024
+  static String shortDate(DateTime date) {
+    final format = DateFormat('dd MMM yyyy', 'es_MX');
+    return format.format(date);
+  }
+
   /// Formatea una fecha de forma relativa: "Hace 2 horas", "Ayer", "Hace 3 días"
   static String relativeDate(DateTime date) {
     final now = DateTime.now();
@@ -88,9 +106,13 @@ class Formatters {
   }
 
   // Formatters de números
-  static final NumberFormat _numberFormat = NumberFormat('#,##0', 'es_MX');
-  static final NumberFormat _decimalFormat = NumberFormat('#,##0.00', 'es_MX');
-  static final NumberFormat _percentFormat = NumberFormat('#,##0.0%', 'es_MX');
+  // Guatemala usa: punto (.) para decimales y coma (,) para miles
+  static final NumberFormat _numberFormat = NumberFormat('#,##0', 'en_US');
+  static final NumberFormat _decimalFormat = NumberFormat('#,##0.00', 'en_US');
+  static final NumberFormat _percentFormat =
+      (NumberFormat.percentPattern('en_US')
+        ..minimumFractionDigits = 1
+        ..maximumFractionDigits = 1);
 
   /// Formatea un número entero: 1,234
   static String number(int number) {
@@ -102,7 +124,7 @@ class Formatters {
     return _decimalFormat.format(number);
   }
 
-  /// Formatea un porcentaje: 45.5%
+  /// Formatea un porcentaje: 45.50%
   static String percentage(double value) {
     return _percentFormat.format(value);
   }

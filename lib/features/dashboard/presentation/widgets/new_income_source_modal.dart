@@ -4,10 +4,12 @@ import 'package:quho_app/shared/design_system/typography/app_text_styles.dart';
 
 class NewIncomeSourceModal extends StatefulWidget {
   final Function(String name, double amount, String frequency, bool isNetAmount, String taxContext) onSubmit;
+  final double? transactionAmount;
 
   const NewIncomeSourceModal({
     super.key,
     required this.onSubmit,
+    this.transactionAmount,
   });
 
   @override
@@ -22,6 +24,15 @@ class _NewIncomeSourceModalState extends State<NewIncomeSourceModal> {
   String _frequency = 'monthly';
   bool _isNetAmount = true;
   String _taxContext = 'other';
+
+  @override
+  void initState() {
+    super.initState();
+    // Si viene un monto de transacción, pre-llenarlo
+    if (widget.transactionAmount != null) {
+      _amountController.text = widget.transactionAmount!.toStringAsFixed(2);
+    }
+  }
 
   @override
   void dispose() {
@@ -92,6 +103,7 @@ class _NewIncomeSourceModalState extends State<NewIncomeSourceModal> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
+                enabled: widget.transactionAmount == null, // Bloqueado si viene de transacción
                 decoration: InputDecoration(
                   hintText: '0.00',
                   prefixText: 'Q ',
@@ -102,6 +114,11 @@ class _NewIncomeSourceModalState extends State<NewIncomeSourceModal> {
                     horizontal: 12,
                     vertical: 12,
                   ),
+                  filled: widget.transactionAmount != null,
+                  fillColor: widget.transactionAmount != null ? AppColors.gray100 : null,
+                  suffixIcon: widget.transactionAmount != null 
+                    ? Icon(Icons.lock, size: 18, color: AppColors.gray500)
+                    : null,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -114,6 +131,13 @@ class _NewIncomeSourceModalState extends State<NewIncomeSourceModal> {
                   return null;
                 },
               ),
+              if (widget.transactionAmount != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Monto tomado de la transacción',
+                  style: AppTextStyles.caption(color: AppColors.gray600),
+                ),
+              ],
               const SizedBox(height: 16),
 
               // Frecuencia
@@ -136,11 +160,11 @@ class _NewIncomeSourceModalState extends State<NewIncomeSourceModal> {
                   ),
                 ),
                 items: const [
+                  DropdownMenuItem(value: 'one_time', child: Text('Única vez')),
+                  DropdownMenuItem(value: 'daily', child: Text('Diario')),
                   DropdownMenuItem(value: 'weekly', child: Text('Semanal')),
                   DropdownMenuItem(value: 'biweekly', child: Text('Quincenal')),
                   DropdownMenuItem(value: 'monthly', child: Text('Mensual')),
-                  DropdownMenuItem(value: 'annual', child: Text('Anual')),
-                  DropdownMenuItem(value: 'one_time', child: Text('Una vez')),
                 ],
                 onChanged: (value) {
                   if (value != null) {

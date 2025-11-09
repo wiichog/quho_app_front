@@ -45,18 +45,28 @@ class CategoryBreakdownList extends StatelessWidget {
       );
     }
 
-    return Column(
-      children: categories.map((category) {
-        return _CategoryBreakdownItem(category: category);
-      }).toList(),
+    // Diseño en cuadrícula con círculos progresivos
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        return _CategoryCircleItem(category: categories[index]);
+      },
     );
   }
 }
 
-class _CategoryBreakdownItem extends StatelessWidget {
+class _CategoryCircleItem extends StatelessWidget {
   final CategoryBreakdown category;
 
-  const _CategoryBreakdownItem({required this.category});
+  const _CategoryCircleItem({required this.category});
 
   Color _getStatusColor() {
     switch (category.status) {
@@ -71,111 +81,69 @@ class _CategoryBreakdownItem extends StatelessWidget {
     }
   }
 
-  IconData _getStatusIcon() {
-    switch (category.status) {
-      case CategoryStatus.good:
-        return Icons.check_circle;
-      case CategoryStatus.warning:
-        return Icons.warning;
-      case CategoryStatus.danger:
-        return Icons.error;
-      case CategoryStatus.neutral:
-        return Icons.info;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor();
-    final percentage = category.spentPercentage;
+    final percentage = (category.spentPercentage * 100).clamp(0, 100).toInt();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: statusColor.withOpacity(0.2),
+          width: 2,
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
+          // Círculo de progreso
+          Stack(
+            alignment: Alignment.center,
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  value: category.spentPercentage.clamp(0, 1),
+                  strokeWidth: 6,
+                  backgroundColor: AppColors.gray200,
+                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                 ),
-                child: Icon(
-                  _getStatusIcon(),
+              ),
+              Text(
+                '$percentage%',
+                style: AppTextStyles.bodySmall().copyWith(
+                  fontWeight: FontWeight.bold,
                   color: statusColor,
-                  size: 16,
+                  fontSize: 14,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  category.category,
-                  style: AppTextStyles.bodyMedium().copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    Formatters.currency(category.spent),
-                    style: AppTextStyles.bodyMedium(color: statusColor).copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'de ${Formatters.currency(category.budgeted)}',
-                    style: AppTextStyles.caption(color: AppColors.gray600),
-                  ),
-                ],
               ),
             ],
           ),
-          AppSpacing.verticalSm,
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage,
-              backgroundColor: AppColors.gray200,
-              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-              minHeight: 8,
+          const SizedBox(height: 8),
+          // Nombre de categoría
+          Text(
+            category.category,
+            style: AppTextStyles.caption().copyWith(
+              fontWeight: FontWeight.w600,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          AppSpacing.verticalXs,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  '${(percentage * 100).toInt()}% gastado',
-                  style: AppTextStyles.caption(color: AppColors.gray600),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Restante: ${Formatters.currency(category.remaining)}',
-                  style: AppTextStyles.caption(color: AppColors.gray600),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                ),
-              ),
-            ],
+          const SizedBox(height: 4),
+          // Monto gastado
+          Text(
+            Formatters.currency(category.spent),
+            style: AppTextStyles.caption(color: statusColor).copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: 10,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

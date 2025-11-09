@@ -5,6 +5,7 @@ import 'package:quho_app/core/network/api_client.dart';
 import 'package:quho_app/features/dashboard/data/models/budget_summary_model.dart';
 import 'package:quho_app/features/dashboard/data/models/transaction_model.dart';
 import 'package:quho_app/features/dashboard/data/models/budget_advice_model.dart';
+import 'package:quho_app/features/dashboard/data/models/category_budget_tracking_model.dart';
 
 /// Modelo simple para categorías (para GASTOS)
 class CategoryModel {
@@ -111,11 +112,13 @@ class FixedExpenseModel {
 abstract class DashboardRemoteDataSource {
   Future<BudgetSummaryModel> getBudgetSummary({required String month});
   Future<List<TransactionModel>> getRecentTransactions({int limit = 5});
-  Future<List<TransactionModel>> getPendingCategorizationTransactions();
+  Future<List<TransactionModel>> getPendingCategorizationTransactions({String ordering = 'asc'});
   Future<List<BudgetAdviceModel>> getBudgetAdvice();
   Future<List<CategoryModel>> getCategories();
   Future<List<IncomeSourceModel>> getIncomeSources();
+  Future<void> deactivateIncomeSource({required int incomeSourceId});
   Future<List<FixedExpenseModel>> getFixedExpenses();
+  Future<void> resetCategorizations();
   Future<TransactionModel> categorizeTransaction({
     required String transactionId,
     required int categoryId,
@@ -134,6 +137,8 @@ abstract class DashboardRemoteDataSource {
     bool isNetAmount = true,
     String taxContext = 'other',
   });
+  Future<List<CategoryBudgetTrackingModel>> getCategoryBudgetTrackings({String? month});
+  Future<CategoryBudgetTrackingModel> toggleCategoryTrackingClosed({required int trackingId});
 }
 
 /// Implementación del datasource remoto del Dashboard
@@ -230,11 +235,12 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   }
 
   @override
-  Future<List<TransactionModel>> getPendingCategorizationTransactions() async {
+  Future<List<TransactionModel>> getPendingCategorizationTransactions({String ordering = 'asc'}) async {
     try {
-      print('🔵 [DATASOURCE] Solicitando transacciones pendientes de categorización');
+      print('🔵 [DATASOURCE] Solicitando transacciones pendientes de categorización (ordering: $ordering)');
       final response = await apiClient.get(
         '/transactions/pending-categorization/',
+        queryParameters: {'ordering': ordering},
       );
 
       print('✅ [DATASOURCE] Respuesta de transacciones pendientes recibida');
@@ -447,6 +453,20 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   }
 
   @override
+  Future<void> deactivateIncomeSource({required int incomeSourceId}) async {
+    try {
+      print('🔵 [DATASOURCE] Desactivando fuente de ingreso $incomeSourceId');
+      final response = await apiClient.delete('/incomes/$incomeSourceId/');
+      print('✅ [DATASOURCE] Fuente de ingreso desactivada. Status: ${response.statusCode}');
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] Error desactivando fuente de ingreso: ${e.response?.data}');
+      // No hacemos throw duro para no bloquear el UX si falla este paso no-crítico
+    } catch (e) {
+      print('❌ [DATASOURCE] Excepción inesperada al desactivar fuente: $e');
+    }
+  }
+
+  @override
   Future<List<FixedExpenseModel>> getFixedExpenses() async {
     try {
       print('🔵 [DATASOURCE] Obteniendo gastos fijos activos');
@@ -480,6 +500,29 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('❌ [DATASOURCE] Stack trace: $stackTrace');
       throw UnexpectedException(
         message: 'Error inesperado al obtener gastos fijos',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> resetCategorizations() async {
+    try {
+      print('🔵 [DATASOURCE] Reseteando categorizaciones de transacciones');
+      final response = await apiClient.post('/transactions/reset-categorizations/');
+      print('✅ [DATASOURCE] Reset completado. Status: ${response.statusCode}');
+      print('📦 [DATASOURCE] Data: ${response.data}');
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException en reset categorizaciones: ${e.response?.data}');
+      throw UnexpectedException(
+        message: 'Error al resetear categorizaciones',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada en reset categorizaciones: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al resetear categorizaciones',
         originalException: e,
       );
     }
@@ -574,6 +617,90 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('❌ [DATASOURCE] Stack trace: $stackTrace');
       throw UnexpectedException(
         message: 'Error inesperado al crear fuente de ingreso',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<List<CategoryBudgetTrackingModel>> getCategoryBudgetTrackings({String? month}) async {
+    try {
+      print('🔵 [DATASOURCE] Getting category budget trackings...');
+      
+      final Map<String, dynamic>? queryParams = month != null ? {'month': month} : null;
+      
+      final response = await apiClient.get(
+        '/category-tracking/',
+        queryParameters: queryParams,
+      );
+      
+      print('✅ [DATASOURCE] Response type: ${response.data.runtimeType}');
+      print('📦 [DATASOURCE] Response data: ${response.data}');
+      
+      // Check if response is paginated or direct list
+      final List<dynamic> trackingsList;
+      if (response.data is List) {
+        trackingsList = response.data as List;
+      } else if (response.data is Map && response.data['results'] != null) {
+        // Paginated response
+        trackingsList = response.data['results'] as List;
+      } else {
+        throw UnexpectedException(
+          message: 'Formato de respuesta inesperado',
+          originalException: Exception('Response is neither List nor paginated Map'),
+        );
+      }
+      
+      print('✅ [DATASOURCE] Got ${trackingsList.length} trackings');
+      
+      return trackingsList
+          .map((json) => CategoryBudgetTrackingModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException: ${e.type}');
+      print('❌ [DATASOURCE] Error: ${e.error}');
+      print('❌ [DATASOURCE] Response: ${e.response?.data}');
+      
+      throw UnexpectedException(
+        message: 'Error al obtener trackings de categorías',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al obtener trackings',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<CategoryBudgetTrackingModel> toggleCategoryTrackingClosed({required int trackingId}) async {
+    try {
+      print('🔵 [DATASOURCE] Toggling tracking $trackingId closed status...');
+      
+      final response = await apiClient.post(
+        '/category-tracking/$trackingId/toggle-closed/',
+      );
+      
+      print('✅ [DATASOURCE] Tracking toggled successfully');
+      
+      return CategoryBudgetTrackingModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException: ${e.type}');
+      print('❌ [DATASOURCE] Error: ${e.error}');
+      print('❌ [DATASOURCE] Response: ${e.response?.data}');
+      
+      throw UnexpectedException(
+        message: 'Error al cambiar estado de categoría',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al cambiar estado',
         originalException: e,
       );
     }

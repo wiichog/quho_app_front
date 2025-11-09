@@ -27,12 +27,17 @@ class SuggestedCategory extends Equatable {
 /// Transacción financiera
 class Transaction extends Equatable {
   final String id;
-  final String type; // 'income' | 'expense'
+  final String type; // 'income' | 'expense' | 'transfer'
   final double amount;
   final String category;
   final String description;
   final DateTime date;
   final bool isRecurring;
+  
+  // Moneda original (para transacciones en moneda extranjera)
+  final String? originalCurrency; // e.g., 'USD'
+  final double? originalAmount;   // e.g., 20.00
+  final double? exchangeRate;     // e.g., 7.67
   
   // Establecimiento/Comercio
   final int? merchantId;
@@ -45,6 +50,11 @@ class Transaction extends Equatable {
   // Fuente de ingreso - para INGRESOS
   final int? incomeSourceId;
   final String? incomeSourceName;
+  
+  // Transfer-specific fields
+  final String? relatedTransactionId;
+  final String? fromAccount;
+  final String? toAccount;
 
   const Transaction({
     required this.id,
@@ -60,6 +70,12 @@ class Transaction extends Equatable {
     this.suggestedCategory,
     this.incomeSourceId,
     this.incomeSourceName,
+    this.originalCurrency,
+    this.originalAmount,
+    this.exchangeRate,
+    this.relatedTransactionId,
+    this.fromAccount,
+    this.toAccount,
   });
 
   /// Es un ingreso
@@ -67,6 +83,9 @@ class Transaction extends Equatable {
 
   /// Es un gasto
   bool get isExpense => type == 'expense';
+  
+  /// Es una transferencia/conversión
+  bool get isTransfer => type == 'transfer';
   
   /// Tiene un merchant asociado
   bool get hasMerchant => merchantId != null;
@@ -89,6 +108,12 @@ class Transaction extends Equatable {
         suggestedCategory,
         incomeSourceId,
         incomeSourceName,
+        originalCurrency,
+        originalAmount,
+        exchangeRate,
+        relatedTransactionId,
+        fromAccount,
+        toAccount,
       ];
 }
 
