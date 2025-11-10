@@ -60,20 +60,50 @@ class IncomeSourceModel {
   final String name;
   final double amount;
   final String frequency;
+  final IncomeTracking? tracking;
 
   IncomeSourceModel({
     required this.id,
     required this.name,
     required this.amount,
     required this.frequency,
+    this.tracking,
   });
 
   factory IncomeSourceModel.fromJson(Map<String, dynamic> json) {
+    final trackingJson = json['tracking'] as Map<String, dynamic>?;
     return IncomeSourceModel(
       id: json['id'] as int,
       name: json['name'] as String,
       amount: double.parse(json['amount'].toString()),
       frequency: json['frequency'] as String,
+      tracking: trackingJson != null ? IncomeTracking.fromJson(trackingJson) : null,
+    );
+  }
+}
+
+class IncomeTracking {
+  final double expectedAmount;
+  final double receivedAmount;
+  final double remainingAmount;
+  final int count;
+  final bool isFullyReceived;
+
+  IncomeTracking({
+    required this.expectedAmount,
+    required this.receivedAmount,
+    required this.remainingAmount,
+    required this.count,
+    required this.isFullyReceived,
+  });
+
+  factory IncomeTracking.fromJson(Map<String, dynamic> json) {
+    return IncomeTracking(
+      expectedAmount: (json['expected_amount'] as num).toDouble(),
+      receivedAmount: (json['received_amount'] as num).toDouble(),
+      remainingAmount: (json['remaining_amount'] as num).toDouble(),
+      count: json['count'] as int,
+      isFullyReceived: json['is_fully_received'] as bool,
     );
   }
 }

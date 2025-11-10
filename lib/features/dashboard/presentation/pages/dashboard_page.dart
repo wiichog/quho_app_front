@@ -560,25 +560,91 @@ class _DashboardContent extends StatelessWidget {
                 
                 // Fuentes existentes
                 final source = incomeSources[index];
-                return ListTile(
-                  leading: Icon(Icons.work, color: AppColors.green),
-                  title: Text(
-                    source.name,
-                    style: AppTextStyles.bodyMedium().copyWith(
-                      fontWeight: FontWeight.w600,
+                final tracking = source.tracking;
+                final isFullyReceived = tracking?.isFullyReceived ?? false;
+                final remainingAmount = tracking?.remainingAmount ?? 0;
+                final statusColor = isFullyReceived 
+                    ? AppColors.gray400 
+                    : (remainingAmount > 0 ? AppColors.green : AppColors.orange);
+                
+                return Opacity(
+                  opacity: isFullyReceived ? 0.5 : 1.0,
+                  child: ListTile(
+                    enabled: !isFullyReceived,
+                    leading: Icon(
+                      isFullyReceived ? Icons.check_circle : Icons.work, 
+                      color: statusColor,
                     ),
-                  ),
-                  subtitle: Text(
-                    '${Formatters.currency(source.amount)} - ${source.frequency}',
-                    style: AppTextStyles.bodySmall().copyWith(
-                      color: AppColors.gray600,
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            source.name,
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontWeight: FontWeight.w600,
+                              decoration: isFullyReceived ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                        ),
+                        if (tracking != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              Formatters.currency(remainingAmount),
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: statusColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${Formatters.currency(source.amount)} - ${source.frequency}',
+                          style: AppTextStyles.bodySmall().copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        ),
+                        if (tracking != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Recibido: ${Formatters.currency(tracking.receivedAmount)} de ${Formatters.currency(tracking.expectedAmount)}',
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.gray500,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                        if (isFullyReceived) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '✓ Completado - ingreso recibido',
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.green,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    trailing: Icon(
+                      isFullyReceived ? Icons.check_circle : Icons.check_circle_outline, 
+                      color: statusColor,
+                    ),
+                    onTap: isFullyReceived ? null : () async {
+                      Navigator.of(dialogContext).pop();
+                      await _categorizeIncomeTransaction(rootContext, transaction.id, source.id);
+                    },
                   ),
-                  trailing: Icon(Icons.check_circle_outline, color: AppColors.gray500),
-                  onTap: () async {
-                    Navigator.of(dialogContext).pop();
-                    await _categorizeIncomeTransaction(rootContext, transaction.id, source.id);
-                  },
                 );
               },
             ),
