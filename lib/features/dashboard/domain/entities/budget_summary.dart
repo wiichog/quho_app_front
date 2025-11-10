@@ -7,6 +7,7 @@ class BudgetSummary extends Equatable {
   final double theoreticalExpenses;
   final double actualIncome;
   final double actualExpenses;
+  final double totalSavings; // Total guardado en cuentas de ahorro
   final double balance;
   final double savingsRate;
   final List<CategoryBreakdown> categoriesBreakdown;
@@ -17,6 +18,7 @@ class BudgetSummary extends Equatable {
     required this.theoreticalExpenses,
     required this.actualIncome,
     required this.actualExpenses,
+    required this.totalSavings,
     required this.balance,
     required this.savingsRate,
     required this.categoriesBreakdown,
@@ -84,6 +86,7 @@ class BudgetSummary extends Equatable {
         theoreticalExpenses,
         actualIncome,
         actualExpenses,
+        totalSavings,
         balance,
         savingsRate,
         categoriesBreakdown,

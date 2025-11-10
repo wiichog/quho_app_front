@@ -72,11 +72,11 @@ class IncomeTracking {
 
   factory IncomeTracking.fromJson(Map<String, dynamic> json) {
     return IncomeTracking(
-      expectedAmount: (json['expected_amount'] as num).toDouble(),
-      receivedAmount: (json['received_amount'] as num).toDouble(),
-      remainingAmount: (json['remaining_amount'] as num).toDouble(),
-      count: json['count'] as int,
-      isFullyReceived: json['is_fully_received'] as bool,
+      expectedAmount: (json['expected_amount'] as num?)?.toDouble() ?? 0.0,
+      receivedAmount: (json['received_amount'] as num?)?.toDouble() ?? 0.0,
+      remainingAmount: (json['remaining_amount'] as num?)?.toDouble() ?? 0.0,
+      count: json['count'] as int? ?? 0,
+      isFullyReceived: json['is_fully_received'] as bool? ?? false,
     );
   }
 }

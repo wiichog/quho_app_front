@@ -11,6 +11,7 @@ class BudgetSummaryModel extends BudgetSummary {
     required super.theoreticalExpenses,
     required super.actualIncome,
     required super.actualExpenses,
+    required super.totalSavings,
     required super.balance,
     required super.savingsRate,
     required super.categoriesBreakdown,
@@ -52,6 +53,11 @@ class BudgetSummaryModel extends BudgetSummary {
       final actualExpenses = (executionExpenseData?['amount'] as num?)?.toDouble() ?? 0.0;
       print('📦 [MODEL] actual_expenses: $actualExpenses');
       
+      // Mapear execution.total_savings.amount -> totalSavings
+      final savingsData = execution?['total_savings'] as Map<String, dynamic>?;
+      final totalSavings = (savingsData?['amount'] as num?)?.toDouble() ?? 0.0;
+      print('📦 [MODEL] total_savings: $totalSavings');
+      
       // Mapear execution.net.amount -> balance
       final netData = execution?['net'] as Map<String, dynamic>?;
       final balance = (netData?['amount'] as num?)?.toDouble() ?? 0.0;
@@ -81,6 +87,7 @@ class BudgetSummaryModel extends BudgetSummary {
         theoreticalExpenses: theoreticalExpenses,
         actualIncome: actualIncome,
         actualExpenses: actualExpenses,
+        totalSavings: totalSavings,
         balance: balance,
         savingsRate: savingsRate,
         categoriesBreakdown: categoriesBreakdown,
