@@ -122,6 +122,7 @@ class BudgetSummaryModel extends BudgetSummary {
       theoreticalExpenses: theoreticalExpenses,
       actualIncome: actualIncome,
       actualExpenses: actualExpenses,
+      totalSavings: totalSavings,
       balance: balance,
       savingsRate: savingsRate,
       categoriesBreakdown: categoriesBreakdown,
