@@ -54,6 +54,33 @@ class CategoryModel {
   }
 }
 
+/// Modelo de tracking para fuentes de ingreso
+class IncomeTracking {
+  final double expectedAmount;
+  final double receivedAmount;
+  final double remainingAmount;
+  final int count;
+  final bool isFullyReceived;
+
+  IncomeTracking({
+    required this.expectedAmount,
+    required this.receivedAmount,
+    required this.remainingAmount,
+    required this.count,
+    required this.isFullyReceived,
+  });
+
+  factory IncomeTracking.fromJson(Map<String, dynamic> json) {
+    return IncomeTracking(
+      expectedAmount: (json['expected_amount'] as num).toDouble(),
+      receivedAmount: (json['received_amount'] as num).toDouble(),
+      remainingAmount: (json['remaining_amount'] as num).toDouble(),
+      count: json['count'] as int,
+      isFullyReceived: json['is_fully_received'] as bool,
+    );
+  }
+}
+
 /// Modelo simple para fuentes de ingreso (para INGRESOS)
 class IncomeSourceModel {
   final int id;
@@ -78,32 +105,6 @@ class IncomeSourceModel {
       amount: double.parse(json['amount'].toString()),
       frequency: json['frequency'] as String,
       tracking: trackingJson != null ? IncomeTracking.fromJson(trackingJson) : null,
-    );
-  }
-}
-
-class IncomeTracking {
-  final double expectedAmount;
-  final double receivedAmount;
-  final double remainingAmount;
-  final int count;
-  final bool isFullyReceived;
-
-  IncomeTracking({
-    required this.expectedAmount,
-    required this.receivedAmount,
-    required this.remainingAmount,
-    required this.count,
-    required this.isFullyReceived,
-  });
-
-  factory IncomeTracking.fromJson(Map<String, dynamic> json) {
-    return IncomeTracking(
-      expectedAmount: (json['expected_amount'] as num).toDouble(),
-      receivedAmount: (json['received_amount'] as num).toDouble(),
-      remainingAmount: (json['remaining_amount'] as num).toDouble(),
-      count: json['count'] as int,
-      isFullyReceived: json['is_fully_received'] as bool,
     );
   }
 }
