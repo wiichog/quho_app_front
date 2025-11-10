@@ -118,15 +118,21 @@ class CategoryBreakdown extends Equatable {
   /// Indica si se excedió el presupuesto de la categoría
   bool get isOverBudget => spent > budgeted;
 
-  /// Porcentaje gastado (0.0 a 1.0)
+  /// Porcentaje gastado (0.0 a 1.0+)
   double get spentPercentage {
-    if (budgeted == 0) return 0.0;
-    return (spent / budgeted).clamp(0.0, 1.0);
+    if (budgeted == 0) {
+      // Si hay gasto sin presupuesto, mostramos 100% (lleno)
+      return spent > 0 ? 1.0 : 0.0;
+    }
+    return (spent / budgeted).clamp(0.0, double.infinity);
   }
 
   /// Estado de la categoría (semáforo)
   CategoryStatus get status {
-    if (budgeted == 0) return CategoryStatus.neutral;
+    // Si no hay presupuesto pero sí hay gasto, es PELIGRO (rojo)
+    if (budgeted == 0) {
+      return spent > 0 ? CategoryStatus.danger : CategoryStatus.neutral;
+    }
     
     final percentage = spent / budgeted;
     

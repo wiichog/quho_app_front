@@ -367,6 +367,7 @@ class _DashboardContent extends StatelessWidget {
       }
 
     try {
+      print('🔵 [CATEGORIZATION] Iniciando categorización de transacción $transactionId con categoría $categoryId');
       // Categorizar
       await datasource.categorizeTransaction(
         transactionId: transactionId,
@@ -374,24 +375,51 @@ class _DashboardContent extends StatelessWidget {
         updateMerchant: updateMerchant,
       );
 
-      if (!context.mounted) return;
+      print('✅ [CATEGORIZATION] Transacción categorizada en el backend');
 
-      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
-      print('🔄 Recargando dashboard...');
+      if (!context.mounted) {
+        print('⚠️ [CATEGORIZATION] Context no montado después de categorizar');
+        return;
+      }
+
+      // Recargar dashboard
+      print('🔄 [CATEGORIZATION] Recargando dashboard...');
       final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
-      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 5));
-      print('✅ Dashboard recargado (DashboardLoaded recibido)');
+      
+      // Esperar a que el BLoC emita DashboardLoaded con timeout y manejo de error
+      try {
+        await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            print('⏱️ [CATEGORIZATION] Timeout esperando DashboardLoaded');
+            throw TimeoutException('Timeout recargando dashboard');
+          },
+        );
+        print('✅ [CATEGORIZATION] Dashboard recargado (DashboardLoaded recibido)');
+      } catch (e) {
+        print('❌ [CATEGORIZATION] Error esperando DashboardLoaded: $e');
+        // Continuar de todas formas, el dashboard se recargará eventualmente
+      }
       
       // Esperar un frame para que Flutter procese el cambio de estado
       await Future.delayed(const Duration(milliseconds: 100));
       
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        print('⚠️ [CATEGORIZATION] Context no montado antes de cerrar loader');
+        return;
+      }
       
       // Cerrar loading dialog
       if (loaderShown) {
-        rootNavigator.pop();
-        loaderShown = false;
+        print('🔵 [CATEGORIZATION] Cerrando loader');
+        try {
+          rootNavigator.pop();
+          loaderShown = false;
+          print('✅ [CATEGORIZATION] Loader cerrado');
+        } catch (e) {
+          print('❌ [CATEGORIZATION] Error cerrando loader: $e');
+        }
       }
       
       // Mostrar éxito
@@ -403,13 +431,24 @@ class _DashboardContent extends StatelessWidget {
           duration: Duration(seconds: 2),
         ),
       );
-    } catch (e) {
-      if (!context.mounted) return;
+    } catch (e, stackTrace) {
+      print('❌ [CATEGORIZATION] Error al categorizar: $e');
+      print('❌ [CATEGORIZATION] Stack trace: $stackTrace');
+      
+      if (!context.mounted) {
+        print('⚠️ [CATEGORIZATION] Context no montado en catch');
+        return;
+      }
       
       // Cerrar loading dialog
       if (loaderShown) {
-        rootNavigator.pop();
-        loaderShown = false;
+        print('🔵 [CATEGORIZATION] Cerrando loader en catch');
+        try {
+          rootNavigator.pop();
+          loaderShown = false;
+        } catch (popError) {
+          print('❌ [CATEGORIZATION] Error cerrando loader en catch: $popError');
+        }
       }
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -420,9 +459,16 @@ class _DashboardContent extends StatelessWidget {
         ),
       );
     } finally {
+      print('🔵 [CATEGORIZATION] En finally, loaderShown: $loaderShown');
       // Salvaguarda por si el loader quedó abierto
       if (loaderShown) {
-        try { rootNavigator.pop(); } catch (_) {}
+        print('⚠️ [CATEGORIZATION] Loader todavía abierto en finally, intentando cerrar');
+        try { 
+          rootNavigator.pop(); 
+          print('✅ [CATEGORIZATION] Loader cerrado en finally');
+        } catch (e) {
+          print('❌ [CATEGORIZATION] Error cerrando loader en finally: $e');
+        }
       }
     }
   }
@@ -1455,29 +1501,6 @@ class _DashboardContent extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Botón de ordenamiento
-                                if (_getPendingCategorizationTransactions().isNotEmpty)
-                                  IconButton(
-                                    onPressed: () {
-                                      final currentOrdering = state.pendingTransactionsOrdering;
-                                      final newOrdering = currentOrdering == 'asc' ? 'desc' : 'asc';
-                                      context.read<DashboardBloc>().add(
-                                        ChangePendingTransactionsOrderingEvent(newOrdering),
-                                      );
-                                    },
-                                    icon: Icon(
-                                      state.pendingTransactionsOrdering == 'asc' 
-                                        ? Icons.arrow_upward 
-                                        : Icons.arrow_downward,
-                                      size: 16,
-                                      color: AppColors.gray600,
-                                    ),
-                                    tooltip: state.pendingTransactionsOrdering == 'asc'
-                                      ? 'Más viejas primero'
-                                      : 'Más nuevas primero',
-                                    padding: const EdgeInsets.all(4),
-                                    constraints: const BoxConstraints(),
-                                  ),
                                 TextButton(
                                   onPressed: () {
                                     context.push(RouteNames.transactions);
@@ -1579,6 +1602,52 @@ class _DashboardContent extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            // Botón de ordenamiento más visible
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.orange.withOpacity(0.3)),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    final currentOrdering = state.pendingTransactionsOrdering;
+                                    final newOrdering = currentOrdering == 'asc' ? 'desc' : 'asc';
+                                    context.read<DashboardBloc>().add(
+                                      ChangePendingTransactionsOrderingEvent(newOrdering),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          state.pendingTransactionsOrdering == 'asc'
+                                              ? Icons.arrow_upward
+                                              : Icons.arrow_downward,
+                                          size: 18,
+                                          color: AppColors.orange,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          state.pendingTransactionsOrdering == 'asc'
+                                              ? 'Antiguas'
+                                              : 'Recientes',
+                                          style: AppTextStyles.caption(color: AppColors.orange).copyWith(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         AppSpacing.verticalSm,
@@ -1669,26 +1738,65 @@ class _DashboardContent extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          Formatters.currency(transaction.amount),
-                                          style: AppTextStyles.bodyMedium().copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: transaction.isIncome ? AppColors.green : AppColors.red,
-                                                        ),
-                                                      ),
-                                                      if (transaction.originalCurrency != null && transaction.originalCurrency != 'GTQ' && transaction.originalAmount != null)
-                                                        Padding(
-                                                          padding: const EdgeInsets.only(top: 2),
-                                                          child: Text(
-                                                            Formatters.currencyWithCode(transaction.originalCurrency!, transaction.originalAmount!),
-                                                            style: AppTextStyles.caption(color: AppColors.gray600),
-                                          ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              Formatters.currency(transaction.amount),
+                                              style: AppTextStyles.bodyMedium().copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: transaction.isIncome ? AppColors.green : AppColors.red,
+                                              ),
+                                            ),
+                                            if (transaction.originalCurrency != null && transaction.originalCurrency != 'GTQ' && transaction.originalAmount != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 2),
+                                                child: Text(
+                                                  Formatters.currencyWithCode(transaction.originalCurrency!, transaction.originalAmount!),
+                                                  style: AppTextStyles.caption(color: AppColors.gray600),
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.gray500),
+                                        const SizedBox(width: 8),
+                                        // Botón de check rápido si hay categoría sugerida
+                                        if (transaction.hasSuggestedCategory)
+                                          Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () async {
+                                                // Aceptar la categoría sugerida directamente
+                                                await _categorizeTransaction(
+                                                  context,
+                                                  transaction.id,
+                                                  transaction.suggestedCategory!.id,
+                                                  false,
+                                                );
+                                              },
+                                              borderRadius: BorderRadius.circular(20),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.teal.withOpacity(0.1),
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: AppColors.teal.withOpacity(0.3),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Icon(
+                                                  Icons.check,
+                                                  size: 16,
+                                                  color: AppColors.teal,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        else
+                                          const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.gray500),
                                       ],
                                     ),
                                   ],

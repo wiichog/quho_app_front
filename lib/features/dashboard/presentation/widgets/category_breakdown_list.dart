@@ -85,6 +85,7 @@ class _CategoryCircleItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor();
     final percentage = (category.spentPercentage * 100).clamp(0, 100).toInt();
+    final hasNoBudget = category.budgeted == 0 && category.spent > 0;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -113,14 +114,20 @@ class _CategoryCircleItem extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                 ),
               ),
-              Text(
-                '$percentage%',
-                style: AppTextStyles.bodySmall().copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
-                  fontSize: 14,
-                ),
-              ),
+              hasNoBudget
+                  ? Icon(
+                      Icons.warning,
+                      color: statusColor,
+                      size: 24,
+                    )
+                  : Text(
+                      '$percentage%',
+                      style: AppTextStyles.bodySmall().copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                        fontSize: 14,
+                      ),
+                    ),
             ],
           ),
           const SizedBox(height: 8),
@@ -135,16 +142,39 @@ class _CategoryCircleItem extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
-          // Monto gastado
-          Text(
-            Formatters.currency(category.spent),
-            style: AppTextStyles.caption(color: statusColor).copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 10,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          // Monto gastado con indicador de sin presupuesto
+          hasNoBudget
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      Formatters.currency(-category.spent),
+                      style: AppTextStyles.caption(color: statusColor).copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Sin presupuesto',
+                      style: AppTextStyles.caption(color: statusColor).copyWith(
+                        fontSize: 8,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                )
+              : Text(
+                  Formatters.currency(category.spent),
+                  style: AppTextStyles.caption(color: statusColor).copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
         ],
       ),
     );

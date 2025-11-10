@@ -84,18 +84,18 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Para sobrevivir el mes',
-                      style: AppTextStyles.caption(
-                        color: AppColors.gray700,
-                      ),
+                  Text(
+                    'Ritmo de gasto sugerido',
+                    style: AppTextStyles.caption(
+                      color: AppColors.gray700,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'Para los próximos ${widget.daysRemaining} días',
+                    style: AppTextStyles.caption(
+                      color: AppColors.gray600,
                     ),
-                    Text(
-                      '${widget.daysRemaining} días restantes',
-                      style: AppTextStyles.caption(
-                        color: AppColors.gray600,
-                      ),
-                    ),
+                  ),
                   ],
                 ),
               ),
@@ -122,15 +122,19 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.speed, size: 12, color: AppColors.gray600),
+              Icon(
+                hasRealDeficit ? Icons.warning : Icons.info_outline, 
+                size: 12, 
+                color: hasRealDeficit ? AppColors.red : AppColors.gray600
+              ),
               AppSpacing.horizontalXs,
               Expanded(
                 child: Text(
                   hasRealDeficit
-                      ? 'Con tu ritmo de gasto planificado, te faltan ${Formatters.currency(remainingAbs)} este mes.'
+                      ? 'Según tus gastos presupuestados, te faltarían ${Formatters.currency(remainingAbs)}. Considera reducir gastos.'
                       : (isNeutral
-                          ? 'Con tu ritmo de gasto planificado, hoy no hay margen diario.'
-                          : 'Si mantienes tu ritmo de gasto planificado, te sobrarán ${Formatters.currency(widget.remainingForMonth)} este mes.'),
+                          ? 'Ya has alcanzado tu presupuesto del mes. Evita nuevos gastos.'
+                          : 'Si respetas tu presupuesto, te sobrarán ${Formatters.currency(widget.remainingForMonth)} al final del mes.'),
                   style: AppTextStyles.caption(
                     color: hasRealDeficit
                         ? AppColors.red
