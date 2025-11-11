@@ -368,9 +368,6 @@ class _DashboardContent extends StatelessWidget {
         );
       }
 
-    // Guardar el bloc antes de la operación asíncrona
-    final bloc = context.read<DashboardBloc>();
-    
     try {
       print('🔵 [CATEGORIZATION] Iniciando categorización de transacción $transactionId con categoría $categoryId');
       // Categorizar
@@ -397,9 +394,17 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
-      print('🔄 [CATEGORIZATION] Recargando dashboard en background...');
-      bloc.add(const LoadDashboardDataEvent());
+      // Recargar dashboard en background (sin esperar) - solo si el context tiene acceso al bloc
+      if (context.mounted) {
+        try {
+          final bloc = context.read<DashboardBloc>();
+          print('🔄 [CATEGORIZATION] Recargando dashboard en background...');
+          bloc.add(const LoadDashboardDataEvent());
+        } catch (e) {
+          print('⚠️ [CATEGORIZATION] No se pudo acceder al DashboardBloc: $e');
+          print('⚠️ [CATEGORIZATION] El dashboard se recargará cuando el usuario regrese a esta página');
+        }
+      }
       
       // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
@@ -998,9 +1003,6 @@ class _DashboardContent extends StatelessWidget {
         );
       }
 
-    // Guardar el bloc antes de la operación asíncrona
-    final bloc = context.read<DashboardBloc>();
-    
     try {
       // Crear fuente y categorizar
       final tx = await datasource.categorizeIncomeWithNewSource(
@@ -1032,9 +1034,17 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
-      print('🔄 Recargando dashboard en background...');
-      bloc.add(const LoadDashboardDataEvent());
+      // Recargar dashboard en background (sin esperar) - solo si el context tiene acceso al bloc
+      if (context.mounted) {
+        try {
+          final bloc = context.read<DashboardBloc>();
+          print('🔄 Recargando dashboard en background...');
+          bloc.add(const LoadDashboardDataEvent());
+        } catch (e) {
+          print('⚠️ [NEW_INCOME] No se pudo acceder al DashboardBloc: $e');
+          print('⚠️ [NEW_INCOME] El dashboard se recargará cuando el usuario regrese a esta página');
+        }
+      }
       
       // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
@@ -1116,9 +1126,6 @@ class _DashboardContent extends StatelessWidget {
       );
     }
 
-    // Guardar el bloc antes de la operación asíncrona
-    final bloc = context.read<DashboardBloc>();
-    
     try {
       print('🔵 Categorizando ingreso...');
       
@@ -1145,9 +1152,17 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
-      print('🔄 Recargando dashboard en background...');
-      bloc.add(const LoadDashboardDataEvent());
+      // Recargar dashboard en background (sin esperar) - solo si el context tiene acceso al bloc
+      if (context.mounted) {
+        try {
+          final bloc = context.read<DashboardBloc>();
+          print('🔄 Recargando dashboard en background...');
+          bloc.add(const LoadDashboardDataEvent());
+        } catch (e) {
+          print('⚠️ [INCOME] No se pudo acceder al DashboardBloc: $e');
+          print('⚠️ [INCOME] El dashboard se recargará cuando el usuario regrese a esta página');
+        }
+      }
       
       // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
@@ -1237,9 +1252,6 @@ class _DashboardContent extends StatelessWidget {
         );
       }
 
-    // Guardar el bloc antes de la operación asíncrona
-    final bloc = context.read<DashboardBloc>();
-    
     try {
       // Categorizar gasto vinculado a FixedExpense
       await datasource.categorizeTransaction(
@@ -1264,9 +1276,17 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
-      print('🔄 Recargando dashboard en background...');
-      bloc.add(const LoadDashboardDataEvent());
+      // Recargar dashboard en background (sin esperar) - solo si el context tiene acceso al bloc
+      if (context.mounted) {
+        try {
+          final bloc = context.read<DashboardBloc>();
+          print('🔄 Recargando dashboard en background...');
+          bloc.add(const LoadDashboardDataEvent());
+        } catch (e) {
+          print('⚠️ [EXPENSE] No se pudo acceder al DashboardBloc: $e');
+          print('⚠️ [EXPENSE] El dashboard se recargará cuando el usuario regrese a esta página');
+        }
+      }
       
       // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
