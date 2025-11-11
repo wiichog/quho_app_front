@@ -443,18 +443,6 @@ class _DashboardContent extends StatelessWidget {
           backgroundColor: AppColors.red,
         ),
       );
-    } finally {
-      print('🔵 [CATEGORIZATION] En finally, loaderShown: $loaderShown');
-      // Salvaguarda por si el loader quedó abierto
-      if (loaderShown) {
-        print('⚠️ [CATEGORIZATION] Loader todavía abierto en finally, intentando cerrar');
-        try { 
-          rootNavigator.pop(); 
-          print('✅ [CATEGORIZATION] Loader cerrado en finally');
-        } catch (e) {
-          print('❌ [CATEGORIZATION] Error cerrando loader en finally: $e');
-        }
-      }
     }
   }
 
@@ -1187,14 +1175,6 @@ class _DashboardContent extends StatelessWidget {
           duration: const Duration(seconds: 5),
         ),
       );
-    } finally {
-      if (loaderShownInc) {
-        try { 
-          rootNavigator.pop(); 
-        } catch (_) {
-          print('⚠️ Error cerrando loader (ya cerrado)');
-        }
-      }
     }
   }
 
