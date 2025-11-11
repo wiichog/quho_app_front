@@ -28,6 +28,18 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+  
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
+      // Cuando el usuario está al 80% del scroll, cargar más
+      final bloc = context.read<TransactionsBloc>();
+      final state = bloc.state;
+      if (state is TransactionsLoaded && state.hasMore && !state.isLoadingMore) {
+        bloc.add(const LoadMoreTransactionsEvent());
+      }
+    }
   }
 
   @override
@@ -334,19 +346,29 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                     ),
                                   ),
                                 ),
-                                // Indicador de carga al final con detección automática
-                                if (state.hasMore)
+                                // Indicador de carga al final
+                                if (state.hasMore || state.isLoadingMore)
                                   SliverToBoxAdapter(
-                                    child: _LoadMoreWidget(
-                                      hasMore: state.hasMore,
-                                      isLoadingMore: state.isLoadingMore,
-                                                  onLoadMore: () {
-                                           blocBuilderContext.read<TransactionsBloc>().add(
-                                             const LoadMoreTransactionsEvent(),
-                                           );
-                                         },
-                                       ),
-                                     ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Center(
+                                        child: state.isLoadingMore
+                                            ? const CircularProgressIndicator(color: AppColors.teal)
+                                            : TextButton.icon(
+                                                onPressed: () {
+                                                  blocBuilderContext.read<TransactionsBloc>().add(
+                                                    const LoadMoreTransactionsEvent(),
+                                                  );
+                                                },
+                                                icon: const Icon(Icons.refresh),
+                                                label: const Text('Cargar más'),
+                                                style: TextButton.styleFrom(
+                                                  foregroundColor: AppColors.teal,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
                                   ],
                                 );
                               },
@@ -452,40 +474,4 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Widget que muestra el indicador de carga y tiene un botón para cargar más
-class _LoadMoreWidget extends StatelessWidget {
-  final bool hasMore;
-  final bool isLoadingMore;
-  final VoidCallback onLoadMore;
-
-  const _LoadMoreWidget({
-    required this.hasMore,
-    required this.isLoadingMore,
-    required this.onLoadMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (!hasMore) return const SizedBox.shrink();
-    
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: isLoadingMore
-            ? const CircularProgressIndicator(
-                color: AppColors.teal,
-              )
-            : ElevatedButton.icon(
-                onPressed: onLoadMore,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Cargar más'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.teal,
-                  foregroundColor: AppColors.white,
-                ),
-              ),
-      ),
-    );
-  }
-}
 
