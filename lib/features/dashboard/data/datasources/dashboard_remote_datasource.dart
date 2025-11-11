@@ -168,6 +168,10 @@ abstract class DashboardRemoteDataSource {
     bool isNetAmount = true,
     String taxContext = 'other',
   });
+  Future<TransactionModel> ignoreTransaction({
+    required String transactionId,
+    bool isIgnored = true,
+  });
   Future<List<CategoryBudgetTrackingModel>> getCategoryBudgetTrackings({String? month});
   Future<CategoryBudgetTrackingModel> toggleCategoryTrackingClosed({required int trackingId});
 }
@@ -648,6 +652,49 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('❌ [DATASOURCE] Stack trace: $stackTrace');
       throw UnexpectedException(
         message: 'Error inesperado al crear fuente de ingreso',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<TransactionModel> ignoreTransaction({
+    required String transactionId,
+    bool isIgnored = true,
+  }) async {
+    try {
+      print('🔵 [DATASOURCE] Marcando transacción $transactionId como ignorada: $isIgnored');
+      final response = await apiClient.patch(
+        '/transactions/$transactionId/ignore/',
+        data: {
+          'is_ignored': isIgnored,
+        },
+      );
+
+      print('✅ [DATASOURCE] Respuesta de ignorar transacción recibida');
+      print('📦 [DATASOURCE] Status code: ${response.statusCode}');
+      print('📦 [DATASOURCE] Data: ${response.data}');
+      
+      final transaction = TransactionModel.fromJson(response.data as Map<String, dynamic>);
+      print('✅ [DATASOURCE] Transacción marcada como ignorada correctamente');
+      return transaction;
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException: ${e.type}');
+      print('❌ [DATASOURCE] Error: ${e.error}');
+      print('❌ [DATASOURCE] Response: ${e.response?.data}');
+      
+      if (e.error is Exception) {
+        throw e.error as Exception;
+      }
+      throw UnexpectedException(
+        message: 'Error al ignorar transacción',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al ignorar transacción',
         originalException: e,
       );
     }

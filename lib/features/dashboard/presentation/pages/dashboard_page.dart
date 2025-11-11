@@ -1843,6 +1843,82 @@ class _DashboardContent extends StatelessWidget {
                                           ],
                                         ),
                                         const SizedBox(width: 8),
+                                        // Botón de ignorar
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () async {
+                                              // Confirmar antes de ignorar
+                                              final confirmed = await showDialog<bool>(
+                                                context: context,
+                                                builder: (dialogContext) => AlertDialog(
+                                                  title: const Text('Ignorar transacción'),
+                                                  content: const Text('¿Estás seguro de que deseas ignorar esta transacción? No aparecerá en las transacciones por categorizar.'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                                                      child: const Text('Cancelar'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                                                      child: const Text('Ignorar'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              
+                                              if (confirmed == true) {
+                                                try {
+                                                  final datasource = getIt<DashboardRemoteDataSource>();
+                                                  await datasource.ignoreTransaction(
+                                                    transactionId: transaction.id,
+                                                    isIgnored: true,
+                                                  );
+                                                  
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Transacción ignorada'),
+                                                        backgroundColor: AppColors.gray600,
+                                                      ),
+                                                    );
+                                                    
+                                                    // Recargar dashboard
+                                                    try {
+                                                      final bloc = context.read<DashboardBloc>();
+                                                      bloc.add(const LoadDashboardDataEvent());
+                                                    } catch (e) {
+                                                      print('⚠️ No se pudo recargar dashboard: $e');
+                                                    }
+                                                  }
+                                                } catch (e) {
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('Error al ignorar transacción: $e'),
+                                                        backgroundColor: AppColors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.gray200.withOpacity(0.5),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.close,
+                                                size: 16,
+                                                color: AppColors.gray600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
                                         // Botón de check rápido si hay categoría sugerida
                                         if (transaction.hasSuggestedCategory)
                                           Material(

@@ -55,6 +55,9 @@ class Transaction extends Equatable {
   final String? relatedTransactionId;
   final String? fromAccount;
   final String? toAccount;
+  
+  // Ignorar transacción
+  final bool isIgnored;
 
   const Transaction({
     required this.id,
@@ -76,6 +79,7 @@ class Transaction extends Equatable {
     this.relatedTransactionId,
     this.fromAccount,
     this.toAccount,
+    this.isIgnored = false,
   });
 
   /// Es un ingreso
@@ -114,6 +118,7 @@ class Transaction extends Equatable {
         relatedTransactionId,
         fromAccount,
         toAccount,
+        isIgnored,
       ];
 }
 

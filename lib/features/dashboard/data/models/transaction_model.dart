@@ -25,6 +25,7 @@ class TransactionModel extends Transaction {
     super.relatedTransactionId,
     super.fromAccount,
     super.toAccount,
+    super.isIgnored = false,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -117,6 +118,9 @@ class TransactionModel extends Transaction {
         print('📦 [MODEL] transfer: $fromAccount → $toAccount');
       }
       
+      // Parsear is_ignored
+      final isIgnored = json['is_ignored'] as bool? ?? false;
+      
       print('✅ [MODEL] TransactionModel parseado correctamente');
       
       return TransactionModel(
@@ -139,6 +143,7 @@ class TransactionModel extends Transaction {
         relatedTransactionId: relatedTransactionId,
         fromAccount: fromAccount,
         toAccount: toAccount,
+        isIgnored: isIgnored,
       );
     } catch (e, stackTrace) {
       print('❌ [MODEL] Error parseando TransactionModel: $e');
@@ -181,6 +186,7 @@ class TransactionModel extends Transaction {
       relatedTransactionId: relatedTransactionId,
       fromAccount: fromAccount,
       toAccount: toAccount,
+      isIgnored: isIgnored,
     );
   }
 }
