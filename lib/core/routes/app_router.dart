@@ -15,6 +15,7 @@ import 'package:quho_app/features/onboarding/presentation/pages/conversational_o
 import 'package:quho_app/features/finances/presentation/pages/finances_page.dart';
 import 'package:quho_app/features/transactions/presentation/pages/transactions_page.dart';
 import 'package:quho_app/features/transactions/presentation/pages/add_transaction_page.dart';
+import 'package:quho_app/features/profile/presentation/pages/profile_page.dart';
 
 /// Configuración de rutas de la aplicación con GoRouter
 class AppRouter {
@@ -480,18 +481,6 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: const Center(child: Text('Settings Page - TODO')),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: const Center(child: Text('Profile Page - TODO')),
     );
   }
 }
