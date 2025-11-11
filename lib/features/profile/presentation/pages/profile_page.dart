@@ -68,7 +68,7 @@ class ProfilePage extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            _getInitials(user.name ?? user.email),
+                            _getInitials(user.fullName.isNotEmpty ? user.fullName : user.email),
                             style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 36,
