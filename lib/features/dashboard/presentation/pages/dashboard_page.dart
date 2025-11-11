@@ -1013,43 +1013,53 @@ class _DashboardContent extends StatelessWidget {
         await datasource.deactivateIncomeSource(incomeSourceId: tx.incomeSourceId!);
       }
 
+      // IMPORTANTE: Cerrar loader INMEDIATAMENTE después de categorizar exitosamente
+      if (loaderShownNew && context.mounted) {
+        print('🔵 [NEW_INCOME] Cerrando loader después de categorizar');
+        try {
+          rootNavigator.pop();
+          loaderShownNew = false;
+          print('✅ [NEW_INCOME] Loader cerrado');
+        } catch (e) {
+          print('❌ [NEW_INCOME] Error cerrando loader: $e');
+          loaderShownNew = false; // Marcar como cerrado de todas formas
+        }
+      }
+
       if (!context.mounted) return;
 
-      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
-      print('🔄 Recargando dashboard...');
+      // Recargar dashboard en background (sin esperar)
+      print('🔄 Recargando dashboard en background...');
       final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
-      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 5));
-      print('✅ Dashboard recargado (DashboardLoaded recibido)');
       
-      // Esperar un frame para que Flutter procese el cambio de estado
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      if (!context.mounted) return;
-      
-      // Cerrar loading dialog
-      if (loaderShownNew) {
-        rootNavigator.pop();
-        loaderShownNew = false;
+      // Mostrar éxito inmediatamente
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.fixed,
+            content: Text('✅ Nueva fuente "$name" creada y ingreso categorizado'),
+            backgroundColor: AppColors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
-      
-      // Mostrar éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.fixed,
-          content: Text('✅ Nueva fuente "$name" creada y ingreso categorizado'),
-          backgroundColor: AppColors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
     } catch (e) {
-      if (!context.mounted) return;
-      
-      // Cerrar loading dialog
+      // Cerrar loading dialog en caso de error
       if (loaderShownNew) {
-        rootNavigator.pop();
-        loaderShownNew = false;
+        print('🔵 [NEW_INCOME] Cerrando loader en catch');
+        try {
+          if (context.mounted) {
+            rootNavigator.pop();
+          }
+        } catch (popError) {
+          print('❌ [NEW_INCOME] Error cerrando loader en catch: $popError');
+        } finally {
+          loaderShownNew = false;
+        }
       }
+      
+      if (!context.mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1059,10 +1069,6 @@ class _DashboardContent extends StatelessWidget {
           duration: const Duration(seconds: 4),
         ),
       );
-    } finally {
-      if (loaderShownNew) {
-        try { rootNavigator.pop(); } catch (_) {}
-      }
     }
   }
 
@@ -1231,45 +1237,53 @@ class _DashboardContent extends StatelessWidget {
         updateMerchant: false,
       );
 
+      // IMPORTANTE: Cerrar loader INMEDIATAMENTE después de categorizar exitosamente
+      if (loaderShownExp && context.mounted) {
+        print('🔵 [EXPENSE] Cerrando loader después de categorizar');
+        try {
+          rootNavigator.pop();
+          loaderShownExp = false;
+          print('✅ [EXPENSE] Loader cerrado');
+        } catch (e) {
+          print('❌ [EXPENSE] Error cerrando loader: $e');
+          loaderShownExp = false; // Marcar como cerrado de todas formas
+        }
+      }
+
       if (!context.mounted) return;
 
-      // Recargar dashboard y esperar a que el BLoC emita DashboardLoaded
-      print('🔄 Recargando dashboard...');
+      // Recargar dashboard en background (sin esperar)
+      print('🔄 Recargando dashboard en background...');
       final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
-      await bloc.stream.firstWhere((s) => s is DashboardLoaded).timeout(const Duration(seconds: 5));
-      print('✅ Dashboard recargado (DashboardLoaded recibido)');
       
-      // Esperar un frame para que Flutter procese el cambio de estado
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      if (!context.mounted) return;
-      
-      // Cerrar loading dialog
-      if (loaderShownExp) {
-        rootNavigator.pop();
-        loaderShownExp = false;
+      // Mostrar éxito inmediatamente
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.fixed,
+            content: Text('✅ Gasto categorizado y vinculado al presupuesto'),
+            backgroundColor: AppColors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
-      
-      // Ya no preguntamos si volverá a gastar - las categorías permanecen abiertas
-      
-      // Mostrar éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.fixed,
-          content: Text('✅ Gasto categorizado y vinculado al presupuesto'),
-          backgroundColor: AppColors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
     } catch (e) {
-      if (!context.mounted) return;
-      
-      // Cerrar loading dialog
+      // Cerrar loading dialog en caso de error
       if (loaderShownExp) {
-        rootNavigator.pop();
-        loaderShownExp = false;
+        print('🔵 [EXPENSE] Cerrando loader en catch');
+        try {
+          if (context.mounted) {
+            rootNavigator.pop();
+          }
+        } catch (popError) {
+          print('❌ [EXPENSE] Error cerrando loader en catch: $popError');
+        } finally {
+          loaderShownExp = false;
+        }
       }
+      
+      if (!context.mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1278,10 +1292,6 @@ class _DashboardContent extends StatelessWidget {
           backgroundColor: AppColors.red,
         ),
       );
-    } finally {
-      if (loaderShownExp) {
-        try { rootNavigator.pop(); } catch (_) {}
-      }
     }
   }
 
