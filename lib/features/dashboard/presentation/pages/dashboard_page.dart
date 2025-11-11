@@ -368,6 +368,9 @@ class _DashboardContent extends StatelessWidget {
         );
       }
 
+    // Guardar el bloc antes de la operación asíncrona
+    final bloc = context.read<DashboardBloc>();
+    
     try {
       print('🔵 [CATEGORIZATION] Iniciando categorización de transacción $transactionId con categoría $categoryId');
       // Categorizar
@@ -380,10 +383,12 @@ class _DashboardContent extends StatelessWidget {
       print('✅ [CATEGORIZATION] Transacción categorizada en el backend');
 
       // IMPORTANTE: Cerrar loader INMEDIATAMENTE después de categorizar exitosamente
-      if (loaderShown && context.mounted) {
+      if (loaderShown) {
         print('🔵 [CATEGORIZATION] Cerrando loader después de categorizar');
         try {
-          rootNavigator.pop();
+          if (context.mounted) {
+            rootNavigator.pop();
+          }
           loaderShown = false;
           print('✅ [CATEGORIZATION] Loader cerrado');
         } catch (e) {
@@ -392,17 +397,11 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      if (!context.mounted) {
-        print('⚠️ [CATEGORIZATION] Context no montado después de categorizar');
-        return;
-      }
-
-      // Recargar dashboard en background (sin esperar)
+      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
       print('🔄 [CATEGORIZATION] Recargando dashboard en background...');
-      final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
       
-      // Mostrar éxito inmediatamente
+      // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -412,6 +411,8 @@ class _DashboardContent extends StatelessWidget {
             duration: Duration(seconds: 2),
           ),
         );
+      } else {
+        print('⚠️ [CATEGORIZATION] Context no montado después de categorizar - dashboard se recargará en background');
       }
     } catch (e, stackTrace) {
       print('❌ [CATEGORIZATION] Error al categorizar: $e');
@@ -997,6 +998,9 @@ class _DashboardContent extends StatelessWidget {
         );
       }
 
+    // Guardar el bloc antes de la operación asíncrona
+    final bloc = context.read<DashboardBloc>();
+    
     try {
       // Crear fuente y categorizar
       final tx = await datasource.categorizeIncomeWithNewSource(
@@ -1014,10 +1018,12 @@ class _DashboardContent extends StatelessWidget {
       }
 
       // IMPORTANTE: Cerrar loader INMEDIATAMENTE después de categorizar exitosamente
-      if (loaderShownNew && context.mounted) {
+      if (loaderShownNew) {
         print('🔵 [NEW_INCOME] Cerrando loader después de categorizar');
         try {
-          rootNavigator.pop();
+          if (context.mounted) {
+            rootNavigator.pop();
+          }
           loaderShownNew = false;
           print('✅ [NEW_INCOME] Loader cerrado');
         } catch (e) {
@@ -1026,14 +1032,11 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      if (!context.mounted) return;
-
-      // Recargar dashboard en background (sin esperar)
+      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
       print('🔄 Recargando dashboard en background...');
-      final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
       
-      // Mostrar éxito inmediatamente
+      // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1043,6 +1046,8 @@ class _DashboardContent extends StatelessWidget {
             duration: const Duration(seconds: 3),
           ),
         );
+      } else {
+        print('⚠️ [NEW_INCOME] Context no montado después de categorizar - dashboard se recargará en background');
       }
     } catch (e) {
       // Cerrar loading dialog en caso de error
@@ -1111,6 +1116,9 @@ class _DashboardContent extends StatelessWidget {
       );
     }
 
+    // Guardar el bloc antes de la operación asíncrona
+    final bloc = context.read<DashboardBloc>();
+    
     try {
       print('🔵 Categorizando ingreso...');
       
@@ -1123,10 +1131,12 @@ class _DashboardContent extends StatelessWidget {
       print('✅ Ingreso categorizado en el servidor');
 
       // IMPORTANTE: Cerrar loader INMEDIATAMENTE después de categorizar exitosamente
-      if (loaderShownInc && context.mounted) {
+      if (loaderShownInc) {
         print('🔵 [INCOME] Cerrando loader después de categorizar');
         try {
-          rootNavigator.pop();
+          if (context.mounted) {
+            rootNavigator.pop();
+          }
           loaderShownInc = false;
           print('✅ [INCOME] Loader cerrado');
         } catch (e) {
@@ -1135,14 +1145,11 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      if (!context.mounted) return;
-
-      // Recargar dashboard en background (sin esperar)
+      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
       print('🔄 Recargando dashboard en background...');
-      final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
       
-      // Mostrar éxito inmediatamente
+      // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1152,6 +1159,8 @@ class _DashboardContent extends StatelessWidget {
             duration: Duration(seconds: 3),
           ),
         );
+      } else {
+        print('⚠️ [INCOME] Context no montado después de categorizar - dashboard se recargará en background');
       }
     } catch (e, stackTrace) {
       print('❌ Error al categorizar ingreso: $e');
@@ -1228,6 +1237,9 @@ class _DashboardContent extends StatelessWidget {
         );
       }
 
+    // Guardar el bloc antes de la operación asíncrona
+    final bloc = context.read<DashboardBloc>();
+    
     try {
       // Categorizar gasto vinculado a FixedExpense
       await datasource.categorizeTransaction(
@@ -1238,10 +1250,12 @@ class _DashboardContent extends StatelessWidget {
       );
 
       // IMPORTANTE: Cerrar loader INMEDIATAMENTE después de categorizar exitosamente
-      if (loaderShownExp && context.mounted) {
+      if (loaderShownExp) {
         print('🔵 [EXPENSE] Cerrando loader después de categorizar');
         try {
-          rootNavigator.pop();
+          if (context.mounted) {
+            rootNavigator.pop();
+          }
           loaderShownExp = false;
           print('✅ [EXPENSE] Loader cerrado');
         } catch (e) {
@@ -1250,14 +1264,11 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      if (!context.mounted) return;
-
-      // Recargar dashboard en background (sin esperar)
+      // Recargar dashboard en background (sin esperar) - el bloc puede seguir existiendo aunque el context se desmonte
       print('🔄 Recargando dashboard en background...');
-      final bloc = context.read<DashboardBloc>();
       bloc.add(const LoadDashboardDataEvent());
       
-      // Mostrar éxito inmediatamente
+      // Mostrar éxito solo si el context sigue montado
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1267,6 +1278,8 @@ class _DashboardContent extends StatelessWidget {
             duration: Duration(seconds: 2),
           ),
         );
+      } else {
+        print('⚠️ [EXPENSE] Context no montado después de categorizar - dashboard se recargará en background');
       }
     } catch (e) {
       // Cerrar loading dialog en caso de error
