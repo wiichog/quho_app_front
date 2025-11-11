@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quho_app/core/config/app_config.dart';
 import 'package:quho_app/core/routes/route_names.dart';
 import 'package:quho_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:quho_app/features/auth/presentation/bloc/auth_event.dart';
@@ -83,7 +82,7 @@ class ProfilePage extends StatelessWidget {
 
                       // Nombre
                       Text(
-                        user.name ?? 'Usuario',
+                        user.fullName.isNotEmpty ? user.fullName : 'Usuario',
                         style: AppTextStyles.h4(),
                         textAlign: TextAlign.center,
                       ),
@@ -102,7 +101,7 @@ class ProfilePage extends StatelessWidget {
                       // Botón de editar perfil
                       OutlinedButton.icon(
                         onPressed: () {
-                          _showEditProfileDialog(context, user.name ?? '', user.email);
+                          _showEditProfileDialog(context, user.fullName, user.email);
                         },
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         label: const Text('Editar perfil'),

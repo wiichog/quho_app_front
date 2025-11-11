@@ -20,7 +20,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final _amountController = TextEditingController();
   final _dateController = TextEditingController();
   
-  TransactionType _selectedType = TransactionType.expense;
+  String _selectedType = 'expense'; // 'expense' | 'income'
   DateTime _selectedDate = DateTime.now();
   String _selectedCurrency = 'GTQ';
   String? _selectedAccount;
@@ -173,10 +173,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             label: 'Gasto',
                             icon: Icons.arrow_downward,
                             color: AppColors.red,
-                            isSelected: _selectedType == TransactionType.expense,
+                            isSelected: _selectedType == 'expense',
                             onTap: () {
                               setState(() {
-                                _selectedType = TransactionType.expense;
+                                _selectedType = 'expense';
                               });
                             },
                           ),
@@ -187,10 +187,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             label: 'Ingreso',
                             icon: Icons.arrow_upward,
                             color: AppColors.green,
-                            isSelected: _selectedType == TransactionType.income,
+                            isSelected: _selectedType == 'income',
                             onTap: () {
                               setState(() {
-                                _selectedType = TransactionType.income;
+                                _selectedType = 'income';
                               });
                             },
                           ),

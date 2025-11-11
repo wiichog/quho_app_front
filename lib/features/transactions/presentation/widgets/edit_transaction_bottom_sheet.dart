@@ -27,7 +27,7 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
   late TextEditingController _amountController;
   late TextEditingController _dateController;
   
-  late TransactionType _selectedType;
+  late String _selectedType; // 'expense' | 'income'
   late DateTime _selectedDate;
   late String _selectedCurrency;
   bool _isSubmitting = false;
@@ -41,7 +41,7 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
     _selectedType = widget.transaction.type;
     _selectedDate = widget.transaction.date;
     _dateController = TextEditingController(text: DateFormat('dd/MM/yyyy').format(_selectedDate));
-    _selectedCurrency = widget.transaction.currency;
+    _selectedCurrency = 'GTQ'; // TODO: Get from transaction or user preferences
 
     // Escuchar cambios
     _descriptionController.addListener(_onFieldChanged);
@@ -362,34 +362,34 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
                 Row(
                   children: [
                     Expanded(
-                      child: _TypeChip(
-                        label: 'Gasto',
-                        icon: Icons.arrow_downward,
-                        color: AppColors.red,
-                        isSelected: _selectedType == TransactionType.expense,
-                        onTap: () {
-                          setState(() {
-                            _selectedType = TransactionType.expense;
-                            _hasChanges = true;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TypeChip(
-                        label: 'Ingreso',
-                        icon: Icons.arrow_upward,
-                        color: AppColors.green,
-                        isSelected: _selectedType == TransactionType.income,
-                        onTap: () {
-                          setState(() {
-                            _selectedType = TransactionType.income;
-                            _hasChanges = true;
-                          });
-                        },
-                      ),
-                    ),
+                  child: _TypeChip(
+                    label: 'Gasto',
+                    icon: Icons.arrow_downward,
+                    color: AppColors.red,
+                    isSelected: _selectedType == 'expense',
+                    onTap: () {
+                      setState(() {
+                        _selectedType = 'expense';
+                        _hasChanges = true;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _TypeChip(
+                    label: 'Ingreso',
+                    icon: Icons.arrow_upward,
+                    color: AppColors.green,
+                    isSelected: _selectedType == 'income',
+                    onTap: () {
+                      setState(() {
+                        _selectedType = 'income';
+                        _hasChanges = true;
+                      });
+                    },
+                  ),
+                ),
                   ],
                 ),
 
@@ -561,7 +561,7 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
                     AppSpacing.verticalSm,
 
                     // Recategorizar (solo si está categorizada)
-                    if (widget.transaction.status != TransactionStatus.pendingCategory)
+                    if (widget.transaction.category != 'Sin categorizar')
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
