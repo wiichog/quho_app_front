@@ -45,6 +45,31 @@ class CategoryBreakdownList extends StatelessWidget {
       );
     }
 
+    // Ordenar categorías:
+    // 1. Primero: no completadas (< 100%)
+    // 2. Luego: exactamente al 100%
+    // 3. Por último: sobre presupuesto (> 100%)
+    final sortedCategories = List<CategoryBreakdown>.from(categories)..sort((a, b) {
+      // Determinar el grupo de cada categoría
+      int getGroup(CategoryBreakdown cat) {
+        final percentage = cat.spentPercentage;
+        if (percentage < 1.0) return 0; // Grupo 1: < 100%
+        if (percentage == 1.0) return 1; // Grupo 2: == 100%
+        return 2; // Grupo 3: > 100%
+      }
+      
+      final groupA = getGroup(a);
+      final groupB = getGroup(b);
+      
+      // Si están en diferentes grupos, ordenar por grupo
+      if (groupA != groupB) {
+        return groupA.compareTo(groupB);
+      }
+      
+      // Si están en el mismo grupo, ordenar por porcentaje de ejecución (ascendente)
+      return a.spentPercentage.compareTo(b.spentPercentage);
+    });
+
     // Diseño en cuadrícula con círculos progresivos
     return GridView.builder(
       shrinkWrap: true,
@@ -55,9 +80,9 @@ class CategoryBreakdownList extends StatelessWidget {
         mainAxisSpacing: 12,
         childAspectRatio: 1.0,
       ),
-      itemCount: categories.length,
+      itemCount: sortedCategories.length,
       itemBuilder: (context, index) {
-        return _CategoryCircleItem(category: categories[index]);
+        return _CategoryCircleItem(category: sortedCategories[index]);
       },
     );
   }
