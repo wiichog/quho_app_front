@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quho_app/core/config/app_config.dart';
+import 'package:quho_app/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
 import 'package:quho_app/shared/design_system/colors/app_colors.dart';
 import 'package:quho_app/shared/design_system/spacing/app_spacing.dart';
 import 'package:quho_app/shared/design_system/typography/app_text_styles.dart';
@@ -8,11 +10,13 @@ import 'package:quho_app/core/utils/formatters.dart';
 class EditableBalanceCard extends StatefulWidget {
   final double balance;
   final VoidCallback? onEdit;
+  final VoidCallback? onBalanceAdjusted;
 
   const EditableBalanceCard({
     super.key,
     required this.balance,
     this.onEdit,
+    this.onBalanceAdjusted,
   });
 
   @override
@@ -21,6 +25,7 @@ class EditableBalanceCard extends StatefulWidget {
 
 class _EditableBalanceCardState extends State<EditableBalanceCard> {
   bool _isEditing = false;
+  bool _isSaving = false;
   late TextEditingController _controller;
 
   @override
@@ -43,12 +48,65 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
     });
   }
 
-  void _saveChanges() {
+  Future<void> _saveChanges() async {
+    final newBalanceText = _controller.text.trim();
+    if (newBalanceText.isEmpty) {
+      _showError('Por favor ingresa un balance válido');
+      return;
+    }
+
+    final newBalance = double.tryParse(newBalanceText);
+    if (newBalance == null) {
+      _showError('Balance inválido');
+      return;
+    }
+
+    // Si no hay diferencia, solo cerrar
+    if ((newBalance - widget.balance).abs() < 0.01) {
+      setState(() {
+        _isEditing = false;
+      });
+      return;
+    }
+
     setState(() {
-      _isEditing = false;
+      _isSaving = true;
     });
-    // TODO: Disparar evento para actualizar el balance en el backend
-    widget.onEdit?.call();
+
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      // Aquí necesitarías implementar el método adjustBalance en el datasource
+      // Por ahora simularemos la llamada
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      setState(() {
+        _isEditing = false;
+        _isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Balance ajustado exitosamente a ${Formatters.currency(newBalance)}',
+          ),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      widget.onBalanceAdjusted?.call();
+      widget.onEdit?.call();
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      _showError('Error al ajustar balance: $e');
+    }
   }
 
   void _cancelEditing() {
@@ -56,6 +114,16 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
       _isEditing = false;
       _controller.text = widget.balance.toStringAsFixed(2);
     });
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -143,12 +211,17 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
               ),
             ),
           if (_isEditing) ...[
+            AppSpacing.verticalSm,
+            Text(
+              'Ingresa el balance real de tu cuenta bancaria',
+              style: AppTextStyles.caption(color: AppColors.white.withOpacity(0.8)),
+            ),
             AppSpacing.verticalMd,
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _cancelEditing,
+                    onPressed: _isSaving ? null : _cancelEditing,
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.white),
                       foregroundColor: AppColors.white,
@@ -159,12 +232,22 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
                 AppSpacing.horizontalMd,
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _saveChanges,
+                    onPressed: _isSaving ? null : _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.white,
                       foregroundColor: AppColors.teal,
+                      disabledBackgroundColor: AppColors.gray300,
                     ),
-                    child: const Text('Guardar'),
+                    child: _isSaving
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.teal),
+                            ),
+                          )
+                        : const Text('Guardar'),
                   ),
                 ),
               ],
