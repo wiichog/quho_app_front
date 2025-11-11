@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quho_app/core/utils/formatters.dart';
 import 'package:quho_app/core/utils/helpers.dart';
 import 'package:quho_app/features/dashboard/domain/entities/transaction.dart';
+import 'package:quho_app/features/transactions/presentation/widgets/edit_transaction_bottom_sheet.dart';
 import 'package:quho_app/shared/design_system/design_system.dart';
 
 /// Bottom sheet con el detalle completo de una transacción
@@ -181,7 +182,15 @@ class TransactionDetailBottomSheet extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        // TODO: Implementar edición
+                        // Abrir modal de edición
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => EditTransactionBottomSheet(
+                            transaction: transaction,
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.edit_outlined, size: 18),
                       label: const Text('Editar'),
