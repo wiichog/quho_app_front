@@ -14,6 +14,7 @@ import 'package:quho_app/features/dashboard/presentation/pages/dashboard_page.da
 import 'package:quho_app/features/onboarding/presentation/pages/conversational_onboarding_page.dart';
 import 'package:quho_app/features/finances/presentation/pages/finances_page.dart';
 import 'package:quho_app/features/transactions/presentation/pages/transactions_page.dart';
+import 'package:quho_app/features/transactions/presentation/pages/add_transaction_page.dart';
 
 /// Configuración de rutas de la aplicación con GoRouter
 class AppRouter {
