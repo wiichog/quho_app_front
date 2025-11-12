@@ -391,8 +391,51 @@ class _TransactionsPageState extends State<TransactionsPage> {
           icon: const Icon(Icons.add),
           label: const Text('Agregar'),
         ),
+        bottomNavigationBar: _buildBottomNav(blocContext),
         ),
       ),
+    );
+  }
+
+  BottomNavigationBar _buildBottomNav(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: 0, // Inicio está seleccionado por defecto
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: 'Inicio',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          activeIcon: Icon(Icons.account_balance_wallet),
+          label: 'Finanzas',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.emoji_events_outlined),
+          activeIcon: Icon(Icons.emoji_events),
+          label: 'Desafíos',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          activeIcon: Icon(Icons.person),
+          label: 'Perfil',
+        ),
+      ],
+      onTap: (index) {
+        if (index == 0) {
+          // Navegar a Dashboard
+          context.pop();
+        } else if (index == 1) {
+          // Navegar a Finanzas
+          context.push(RouteNames.finances);
+        } else if (index == 2) {
+          context.push(RouteNames.gamification);
+        } else if (index == 3) {
+          context.push(RouteNames.profile);
+        }
+      },
     );
   }
 
