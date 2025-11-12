@@ -117,10 +117,22 @@ class AppRouter {
             builder: (context, state) {
               // Leer parámetros de query para filtros pre-aplicados
               final categoryId = state.uri.queryParameters['category'];
-              final categoryName = state.uri.queryParameters['categoryName'];
+              final categoryNameParam = state.uri.queryParameters['categoryName'];
+              String? categoryName;
+              
+              // Decodificar de forma segura el nombre de la categoría
+              if (categoryNameParam != null) {
+                try {
+                  categoryName = Uri.decodeComponent(categoryNameParam);
+                } catch (e) {
+                  // Si hay error al decodificar, usar el valor original
+                  categoryName = categoryNameParam;
+                }
+              }
+              
               return TransactionsPage(
                 initialCategoryFilter: categoryId,
-                initialCategoryName: categoryName != null ? Uri.decodeComponent(categoryName) : null,
+                initialCategoryName: categoryName,
               );
             },
           ),

@@ -112,3 +112,4 @@ Este documento explica cómo configurar Google Sign-In para Flutter Web.
 - [ ] Meta tag agregado en `web/index.html` con el Client ID correcto
 - [ ] Aplicación probada y funcionando
 
+
