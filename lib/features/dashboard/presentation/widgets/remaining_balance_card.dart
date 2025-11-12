@@ -296,26 +296,182 @@ class _DailyBudgetBreakdownModalState extends State<_DailyBudgetBreakdownModal> 
     }
   }
 
+  Widget _buildFixedExpenseItem(FixedExpenseModel expense) {
+    final tracking = expense.tracking;
+    final isIgnored = tracking?.isIgnored ?? false;
+    final isClosed = tracking?.isClosed ?? false;
+    final remaining = tracking?.remainingAmount ?? expense.amount;
+    final spent = tracking?.spentAmount ?? 0.0;
+    
+    Color statusColor = AppColors.gray600;
+    String statusText = 'Pendiente';
+    IconData statusIcon = Icons.pending_outlined;
+    
+    if (isIgnored) {
+      statusColor = AppColors.gray500;
+      statusText = 'Ignorado';
+      statusIcon = Icons.visibility_off;
+    } else if (isClosed) {
+      statusColor = AppColors.green;
+      statusText = 'Completado';
+      statusIcon = Icons.check_circle;
+    } else if (remaining <= 0) {
+      statusColor = AppColors.green;
+      statusText = 'Pagado';
+      statusIcon = Icons.check_circle_outline;
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: AppSpacing.paddingSm,
+      decoration: BoxDecoration(
+        color: isIgnored || isClosed ? AppColors.gray50 : AppColors.white,
+        border: Border.all(
+          color: isIgnored || isClosed ? AppColors.gray300 : AppColors.teal.withOpacity(0.3),
+        ),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(statusIcon, size: 16, color: statusColor),
+              AppSpacing.horizontalXs,
+              Expanded(
+                child: Text(
+                  expense.name,
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    fontWeight: FontWeight.w600,
+                    decoration: isIgnored || isClosed ? TextDecoration.lineThrough : null,
+                    color: isIgnored || isClosed ? AppColors.gray600 : AppColors.gray900,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  statusText,
+                  style: AppTextStyles.caption(color: statusColor).copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          AppSpacing.verticalXxs,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Presupuestado: ${Formatters.currency(expense.amount)}',
+                  style: AppTextStyles.caption(color: AppColors.gray600),
+                ),
+              ),
+              if (!isIgnored && !isClosed) ...[
+                Text(
+                  'Pendiente: ${Formatters.currency(remaining)}',
+                  style: AppTextStyles.caption(color: AppColors.red).copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (spent > 0) ...[
+            AppSpacing.verticalXxs,
+            Text(
+              'Gastado: ${Formatters.currency(spent)}',
+              style: AppTextStyles.caption(color: AppColors.gray600),
+            ),
+          ],
+          AppSpacing.verticalXs,
+          Row(
+            children: [
+              if (!isIgnored)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _toggleExpenseStatus(expense, 'ignore'),
+                    icon: Icon(Icons.visibility_off, size: 14),
+                    label: Text('Ignorar'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.gray700,
+                      side: BorderSide(color: AppColors.gray300),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    ),
+                  ),
+                ),
+              if (isIgnored) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _toggleExpenseStatus(expense, 'reset'),
+                    icon: Icon(Icons.refresh, size: 14),
+                    label: Text('Restaurar'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.teal,
+                      side: BorderSide(color: AppColors.teal),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    ),
+                  ),
+                ),
+              ],
+              if (!isIgnored) ...[
+                AppSpacing.horizontalSm,
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _toggleExpenseStatus(expense, 'complete'),
+                    icon: Icon(isClosed ? Icons.undo : Icons.check, size: 14),
+                    label: Text(isClosed ? 'Desmarcar' : 'Completar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isClosed ? AppColors.gray600 : AppColors.green,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Cálculos del desglose
-    final rawDailyBudget = daysRemaining > 0 ? remainingForMonth / daysRemaining : 0.0;
-    final dailyBudget = rawDailyBudget > 0 ? rawDailyBudget : 0.0;
+    // Calcular gastos fijos pendientes (no ignorados ni completados)
+    double pendingFixedExpenses = 0.0;
+    final pendingExpensesList = <FixedExpenseModel>[];
     
-    // Cálculo del gasto diario teórico
-    final dailyTheoreticalExpense = daysInMonth > 0 ? theoreticalExpenses / daysInMonth : 0.0;
-    final projectedExpenseRemaining = dailyTheoreticalExpense * daysRemaining;
+    if (_fixedExpenses != null) {
+      for (final expense in _fixedExpenses!) {
+        final tracking = expense.tracking;
+        // Solo contar gastos que NO estén ignorados NI completados
+        if (tracking != null && !tracking.isIgnored && !tracking.isClosed) {
+          final remaining = tracking.remainingAmount;
+          if (remaining > 0) {
+            pendingFixedExpenses += remaining;
+            pendingExpensesList.add(expense);
+          }
+        } else if (tracking == null) {
+          // Si no hay tracking, contar el monto completo
+          pendingFixedExpenses += expense.amount;
+          pendingExpensesList.add(expense);
+        }
+      }
+    }
     
-    // Balance calculado
-    final calculatedBalance = actualIncome - actualExpenses - totalSavings;
+    // CÁLCULO CORRECTO: Balance - Gastos fijos pendientes / Días restantes
+    final availableAfterFixedExpenses = widget.balance - pendingFixedExpenses;
+    final dailyBudget = widget.daysRemaining > 0 
+        ? (availableAfterFixedExpenses / widget.daysRemaining).clamp(0.0, double.infinity)
+        : 0.0;
     
-    // Diferencia entre teórico y real
-    final incomeDifference = actualIncome - theoreticalIncome;
-    final expenseDifference = actualExpenses - theoreticalExpenses;
-    
-    // Explicación del cálculo
-    final hasDeficit = remainingForMonth < 0;
-    final deficitAmount = remainingForMonth.abs();
+    final hasDeficit = availableAfterFixedExpenses < 0;
 
     return Container(
       decoration: const BoxDecoration(
@@ -350,167 +506,186 @@ class _DailyBudgetBreakdownModalState extends State<_DailyBudgetBreakdownModal> 
               ),
               AppSpacing.verticalMd,
               
-              // Resumen principal
-              Container(
-                padding: AppSpacing.paddingMd,
-                decoration: BoxDecoration(
-                  color: AppColors.tealPale,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  border: Border.all(color: AppColors.teal.withOpacity(0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Puedes gastar ${Formatters.currency(dailyBudget)} / día',
-                      style: AppTextStyles.h3(
-                        color: AppColors.teal,
-                      ).copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    AppSpacing.verticalXs,
-                    Text(
-                      'Para los próximos $daysRemaining días',
-                      style: AppTextStyles.bodySmall(color: AppColors.gray600),
-                    ),
-                  ],
-                ),
-              ),
-              
-              AppSpacing.verticalLg,
-              
-              // Explicación del cálculo
-              Text(
-                '¿Cómo se calcula?',
-                style: AppTextStyles.h5().copyWith(fontWeight: FontWeight.w600),
-              ),
-              AppSpacing.verticalSm,
-              
-              // Paso 1: Balance disponible
-              _BreakdownRow(
-                label: 'Balance disponible',
-                value: Formatters.currency(balance),
-                explanation: 'Ingresos reales - Gastos reales - Ahorros',
-                isPositive: balance >= 0,
-              ),
-              AppSpacing.verticalXs,
-              _BreakdownRow(
-                label: '  • Ingresos reales',
-                value: Formatters.currency(actualIncome),
-                explanation: null,
-                isPositive: true,
-                isSubItem: true,
-              ),
-              AppSpacing.verticalXxs,
-              _BreakdownRow(
-                label: '  • Gastos reales',
-                value: '-${Formatters.currency(actualExpenses)}',
-                explanation: null,
-                isPositive: false,
-                isSubItem: true,
-              ),
-              AppSpacing.verticalXxs,
-              _BreakdownRow(
-                label: '  • Ahorros',
-                value: '-${Formatters.currency(totalSavings)}',
-                explanation: null,
-                isPositive: false,
-                isSubItem: true,
-              ),
-              
-              AppSpacing.verticalSm,
-              
-              // Paso 2: Gasto proyectado restante
-              _BreakdownRow(
-                label: 'Gasto proyectado restante',
-                value: Formatters.currency(projectedExpenseRemaining),
-                explanation: 'Gasto diario teórico × Días restantes',
-                isPositive: false,
-              ),
-              AppSpacing.verticalXs,
-              _BreakdownRow(
-                label: '  • Gasto diario teórico',
-                value: Formatters.currency(dailyTheoreticalExpense),
-                explanation: 'Presupuesto mensual ÷ $daysInMonth días',
-                isPositive: false,
-                isSubItem: true,
-              ),
-              AppSpacing.verticalXxs,
-              _BreakdownRow(
-                label: '  • Días restantes',
-                value: '$daysRemaining días',
-                explanation: null,
-                isPositive: true,
-                isSubItem: true,
-              ),
-              
-              AppSpacing.verticalSm,
-              
-              // Paso 3: Resultado
-              Container(
-                padding: AppSpacing.paddingSm,
-                decoration: BoxDecoration(
-                  color: hasDeficit ? AppColors.redLight : AppColors.greenLight,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            hasDeficit ? 'Te faltan' : 'Te sobran',
-                            style: AppTextStyles.bodySmall(
-                              color: hasDeficit ? AppColors.red : AppColors.green,
-                            ),
-                          ),
-                          Text(
-                            Formatters.currency(hasDeficit ? deficitAmount : remainingForMonth),
-                            style: AppTextStyles.h5(
-                              color: hasDeficit ? AppColors.red : AppColors.green,
-                            ).copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+              // Mostrar loading o error si aplica
+              if (_isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(color: AppColors.teal),
+                  ),
+                )
+              else if (_error != null)
+                Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: AppColors.redLight,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error, color: AppColors.red),
+                      AppSpacing.horizontalSm,
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: AppTextStyles.bodySmall(color: AppColors.red),
+                        ),
                       ),
+                    ],
+                  ),
+                )
+              else ...[
+                // Resumen principal
+                Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: hasDeficit ? AppColors.redLight : AppColors.tealPale,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(
+                      color: (hasDeficit ? AppColors.red : AppColors.teal).withOpacity(0.3),
                     ),
-                    Icon(
-                      hasDeficit ? Icons.warning : Icons.check_circle,
-                      color: hasDeficit ? AppColors.red : AppColors.green,
-                    ),
-                  ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Puedes gastar ${Formatters.currency(dailyBudget)} / día',
+                        style: AppTextStyles.h3(
+                          color: hasDeficit ? AppColors.red : AppColors.teal,
+                        ).copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      AppSpacing.verticalXs,
+                      Text(
+                        'Para los próximos ${widget.daysRemaining} días',
+                        style: AppTextStyles.bodySmall(color: AppColors.gray600),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                
+                AppSpacing.verticalLg,
               
-              AppSpacing.verticalLg,
-              
-              // Información adicional
-              if (incomeDifference.abs() > 0.01 || expenseDifference.abs() > 0.01) ...[
+                // Explicación del cálculo
                 Text(
-                  'Diferencias vs. Presupuesto',
+                  '¿Cómo se calcula?',
                   style: AppTextStyles.h5().copyWith(fontWeight: FontWeight.w600),
                 ),
                 AppSpacing.verticalSm,
-                if (incomeDifference.abs() > 0.01)
-                  _BreakdownRow(
-                    label: 'Diferencia en ingresos',
-                    value: Formatters.currency(incomeDifference.abs()),
-                    explanation: incomeDifference > 0 
-                        ? 'Has recibido más de lo presupuestado'
-                        : 'Has recibido menos de lo presupuestado',
-                    isPositive: incomeDifference > 0,
-                  ),
-                if (expenseDifference.abs() > 0.01) ...[
+                
+                // Paso 1: Balance disponible
+                _BreakdownRow(
+                  label: '1. Balance disponible',
+                  value: Formatters.currency(widget.balance),
+                  explanation: 'Tu dinero actual en cuenta',
+                  isPositive: widget.balance >= 0,
+                ),
+                
+                AppSpacing.verticalMd,
+                
+                // Paso 2: Gastos fijos pendientes
+                Text(
+                  '2. Gastos fijos pendientes',
+                  style: AppTextStyles.bodyMedium().copyWith(fontWeight: FontWeight.w600),
+                ),
+                AppSpacing.verticalXs,
+                Text(
+                  'Gastos que aún no has completado este mes',
+                  style: AppTextStyles.caption(color: AppColors.gray600),
+                ),
+                AppSpacing.verticalSm,
+                
+                // Lista de gastos fijos
+                if (_fixedExpenses != null && _fixedExpenses!.isNotEmpty) ...[
+                  ...(_fixedExpenses!.map((expense) => _buildFixedExpenseItem(expense))),
+                  AppSpacing.verticalXs,
+                  Divider(color: AppColors.gray300),
                   AppSpacing.verticalXs,
                   _BreakdownRow(
-                    label: 'Diferencia en gastos',
-                    value: Formatters.currency(expenseDifference.abs()),
-                    explanation: expenseDifference > 0 
-                        ? 'Has gastado más de lo presupuestado'
-                        : 'Has gastado menos de lo presupuestado',
-                    isPositive: expenseDifference < 0,
+                    label: 'Total gastos fijos pendientes',
+                    value: Formatters.currency(pendingFixedExpenses),
+                    explanation: null,
+                    isPositive: false,
                   ),
-                ],
+                ] else
+                  Container(
+                    padding: AppSpacing.paddingSm,
+                    decoration: BoxDecoration(
+                      color: AppColors.gray100,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    ),
+                    child: Text(
+                      'No tienes gastos fijos configurados',
+                      style: AppTextStyles.bodySmall(color: AppColors.gray600),
+                    ),
+                  ),
+                
+                AppSpacing.verticalMd,
+                
+                // Paso 3: Resultado
+                Text(
+                  '3. Presupuesto diario disponible',
+                  style: AppTextStyles.bodyMedium().copyWith(fontWeight: FontWeight.w600),
+                ),
+                AppSpacing.verticalXs,
+                Text(
+                  'Balance - Gastos fijos pendientes ÷ ${widget.daysRemaining} días',
+                  style: AppTextStyles.caption(color: AppColors.gray600),
+                ),
+                AppSpacing.verticalSm,
+                
+                Container(
+                  padding: AppSpacing.paddingMd,
+                  decoration: BoxDecoration(
+                    color: hasDeficit ? AppColors.redLight : AppColors.greenLight,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    border: Border.all(
+                      color: (hasDeficit ? AppColors.red : AppColors.green).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  hasDeficit 
+                                      ? 'Déficit: Te faltan' 
+                                      : 'Disponible después de gastos fijos',
+                                  style: AppTextStyles.bodySmall(
+                                    color: hasDeficit ? AppColors.red : AppColors.green,
+                                  ),
+                                ),
+                                Text(
+                                  Formatters.currency(availableAfterFixedExpenses.abs()),
+                                  style: AppTextStyles.h5(
+                                    color: hasDeficit ? AppColors.red : AppColors.green,
+                                  ).copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            hasDeficit ? Icons.warning : Icons.check_circle,
+                            color: hasDeficit ? AppColors.red : AppColors.green,
+                            size: 32,
+                          ),
+                        ],
+                      ),
+                      if (hasDeficit) ...[
+                        AppSpacing.verticalSm,
+                        Text(
+                          'Considera ignorar o ajustar algunos gastos fijos para mejorar tu presupuesto diario',
+                          style: AppTextStyles.caption(color: AppColors.red),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                
                 AppSpacing.verticalLg,
               ],
               
