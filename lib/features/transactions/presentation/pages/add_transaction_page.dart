@@ -541,6 +541,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             return DropdownMenuItem(
                               value: category,
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
                                     width: 12,
@@ -551,7 +552,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Expanded(
+                                  Flexible(
+                                    fit: FlexFit.loose,
                                     child: Text(
                                       category.displayName,
                                       overflow: TextOverflow.ellipsis,
