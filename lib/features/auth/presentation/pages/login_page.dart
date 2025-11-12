@@ -42,6 +42,16 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _handleSocialLogin(String provider) {
+    // TODO: Implementar lógica de social auth con el backend
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Inicio de sesión con $provider próximamente'),
+        backgroundColor: AppColors.blue,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,13 +201,44 @@ class _LoginPageState extends State<LoginPage> {
                         Padding(
                           padding: AppSpacing.paddingHorizontalMd,
                           child: Text(
-                            'o',
+                            'o continúa con',
                             style: AppTextStyles.caption(),
                           ),
                         ),
                         const Expanded(child: Divider()),
                       ],
                     ),
+
+                    AppSpacing.verticalMd,
+
+                    // Botones de Social Auth
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _SocialButton(
+                          icon: Icons.g_mobiledata,
+                          label: 'Google',
+                          onPressed: isLoading ? null : () => _handleSocialLogin('google'),
+                        ),
+                        const SizedBox(width: 12),
+                        _SocialButton(
+                          icon: Icons.apple,
+                          label: 'Apple',
+                          onPressed: isLoading ? null : () => _handleSocialLogin('apple'),
+                        ),
+                        const SizedBox(width: 12),
+                        _SocialButton(
+                          icon: Icons.facebook,
+                          label: 'Facebook',
+                          onPressed: isLoading ? null : () => _handleSocialLogin('facebook'),
+                        ),
+                      ],
+                    ),
+
+                    AppSpacing.verticalLg,
+
+                    // Divider
+                    const Divider(),
 
                     AppSpacing.verticalMd,
 
@@ -226,6 +267,54 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Widget de botón para Social Auth
+class _SocialButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: onPressed == null ? AppColors.gray300 : AppColors.gray400,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: onPressed == null ? AppColors.gray400 : AppColors.gray700,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyles.caption(
+                color: onPressed == null ? AppColors.gray400 : AppColors.gray700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

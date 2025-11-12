@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quho_app/core/routes/route_names.dart';
 import 'package:quho_app/core/utils/validators.dart';
 import 'package:quho_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:quho_app/features/auth/presentation/bloc/auth_event.dart';
@@ -53,6 +52,16 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           );
     }
+  }
+
+  void _handleSocialRegister(String provider) {
+    // TODO: Implementar lógica de social auth con el backend
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Registro con $provider próximamente'),
+        backgroundColor: AppColors.blue,
+      ),
+    );
   }
 
   @override
@@ -228,6 +237,54 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     AppSpacing.verticalLg,
 
+                    // Divider
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: AppSpacing.paddingHorizontalMd,
+                          child: Text(
+                            'o regístrate con',
+                            style: AppTextStyles.caption(),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+
+                    AppSpacing.verticalMd,
+
+                    // Botones de Social Auth
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _SocialButton(
+                          icon: Icons.g_mobiledata,
+                          label: 'Google',
+                          onPressed: isLoading ? null : () => _handleSocialRegister('google'),
+                        ),
+                        const SizedBox(width: 12),
+                        _SocialButton(
+                          icon: Icons.apple,
+                          label: 'Apple',
+                          onPressed: isLoading ? null : () => _handleSocialRegister('apple'),
+                        ),
+                        const SizedBox(width: 12),
+                        _SocialButton(
+                          icon: Icons.facebook,
+                          label: 'Facebook',
+                          onPressed: isLoading ? null : () => _handleSocialRegister('facebook'),
+                        ),
+                      ],
+                    ),
+
+                    AppSpacing.verticalLg,
+
+                    // Divider
+                    const Divider(),
+
+                    AppSpacing.verticalMd,
+
                     // Link a login
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -255,6 +312,54 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Widget de botón para Social Auth
+class _SocialButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: onPressed == null ? AppColors.gray300 : AppColors.gray400,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: onPressed == null ? AppColors.gray400 : AppColors.gray700,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyles.caption(
+                color: onPressed == null ? AppColors.gray400 : AppColors.gray700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
