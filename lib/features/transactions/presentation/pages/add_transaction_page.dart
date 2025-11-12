@@ -23,18 +23,24 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   
   String _selectedType = 'expense'; // 'expense' | 'income'
   DateTime _selectedDate = DateTime.now();
-  String _selectedCurrency = 'GTQ';
-  String? _selectedAccount;
   bool _isSubmitting = false;
+  bool _isLoadingCategories = false;
+  bool _isLoadingIncomeSources = false;
 
-  final List<String> _currencies = ['GTQ', 'USD', 'EUR'];
-  final List<String> _accounts = ['Cuenta Principal', 'Cuenta de Ahorros', 'Efectivo', 'Tarjeta de Crédito'];
+  // Datos cargados
+  List<CategoryModel> _categories = [];
+  List<IncomeSourceModel> _incomeSources = [];
+  
+  // Selecciones
+  CategoryModel? _selectedCategory;
+  IncomeSourceModel? _selectedIncomeSource;
 
   @override
   void initState() {
     super.initState();
     _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate);
-    _selectedAccount = _accounts.first;
+    _loadCategories();
+    _loadIncomeSources();
   }
 
   @override
@@ -45,12 +51,74 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     super.dispose();
   }
 
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoadingCategories = true;
+    });
+
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      final categories = await datasource.getCategories();
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _categories = categories;
+        _isLoadingCategories = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoadingCategories = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar categorías: $e'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadIncomeSources() async {
+    setState(() {
+      _isLoadingIncomeSources = true;
+    });
+
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      final sources = await datasource.getIncomeSources();
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _incomeSources = sources;
+        _isLoadingIncomeSources = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoadingIncomeSources = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar fuentes de ingreso: $e'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -94,8 +162,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         amount: amount,
         description: description,
         date: _selectedDate,
-        categoryId: null, // TODO: Agregar selector de categoría en el formulario
-        incomeSourceId: null, // TODO: Agregar selector de fuente de ingreso en el formulario
+        categoryId: _selectedCategory?.id,
+        incomeSourceId: _selectedIncomeSource?.id,
       );
       
       if (!mounted) return;
@@ -190,6 +258,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             onTap: () {
                               setState(() {
                                 _selectedType = 'expense';
+                                _selectedIncomeSource = null; // Limpiar selección de ingreso
                               });
                             },
                           ),
@@ -204,6 +273,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             onTap: () {
                               setState(() {
                                 _selectedType = 'income';
+                                _selectedCategory = null; // Limpiar selección de categoría
                               });
                             },
                           ),
@@ -237,7 +307,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     TextFormField(
                       controller: _descriptionController,
                       decoration: InputDecoration(
-                        hintText: 'Ej: Compra en supermercado',
+                        hintText: _selectedType == 'expense' 
+                            ? 'Ej: Compra en supermercado'
+                            : 'Ej: Salario de noviembre',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(color: AppColors.gray300),
@@ -268,7 +340,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
               AppSpacing.verticalMd,
 
-              // Monto y Moneda
+              // Monto
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.white,
@@ -286,86 +358,49 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       ),
                     ),
                     AppSpacing.verticalSm,
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextFormField(
-                            controller: _amountController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: '0.00',
-                              prefixText: _selectedCurrency == 'GTQ' ? 'Q ' : '\$ ',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.teal, width: 2),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Ingresa un monto';
-                              }
-                              final amount = double.tryParse(value);
-                              if (amount == null || amount <= 0) {
-                                return 'Monto inválido';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedCurrency,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.teal, width: 2),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            items: _currencies.map((currency) {
-                              return DropdownMenuItem(
-                                value: currency,
-                                child: Text(currency),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  _selectedCurrency = value;
-                                });
-                              }
-                            },
-                          ),
-                        ),
+                    TextFormField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                       ],
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        prefixText: 'Q ',
+                        prefixStyle: AppTextStyles.bodyLarge().copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray900,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppColors.gray300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppColors.gray300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      style: AppTextStyles.h3().copyWith(
+                        color: _selectedType == 'expense' ? AppColors.red : AppColors.green,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ingresa un monto';
+                        }
+                        final amount = double.tryParse(value);
+                        if (amount == null || amount <= 0) {
+                          return 'Monto inválido';
+                        }
+                        return null;
+                      },
                     ),
                   ],
                 ),
@@ -421,61 +456,221 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
               AppSpacing.verticalMd,
 
-              // Cuenta
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                ),
-                padding: AppSpacing.paddingMd,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cuenta',
-                      style: AppTextStyles.bodyMedium().copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.gray700,
+              // Selector de Categoría (solo para gastos) o Fuente de Ingreso (solo para ingresos)
+              if (_selectedType == 'expense')
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  padding: AppSpacing.paddingMd,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Categoría',
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gray700,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(Opcional)',
+                            style: AppTextStyles.caption(color: AppColors.gray500),
+                          ),
+                        ],
                       ),
-                    ),
-                    AppSpacing.verticalSm,
-                    DropdownButtonFormField<String>(
-                      value: _selectedAccount,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
+                      AppSpacing.verticalSm,
+                      if (_isLoadingCategories)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_categories.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: AppColors.gray500),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'No hay categorías disponibles',
+                                  style: AppTextStyles.bodySmall(color: AppColors.gray600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        DropdownButtonFormField<CategoryModel>(
+                          value: _selectedCategory,
+                          decoration: InputDecoration(
+                            hintText: 'Selecciona una categoría',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.gray300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.gray300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          items: _categories.map((category) {
+                            return DropdownMenuItem(
+                              value: category,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: Color(int.parse('0xFF${category.color.substring(1)}')),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      category.displayName,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCategory = value;
+                            });
+                          },
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.teal, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  padding: AppSpacing.paddingMd,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Fuente de Ingreso',
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gray700,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(Opcional)',
+                            style: AppTextStyles.caption(color: AppColors.gray500),
+                          ),
+                        ],
                       ),
-                      items: _accounts.map((account) {
-                        return DropdownMenuItem(
-                          value: account,
-                          child: Text(account),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedAccount = value;
-                          });
-                        }
-                      },
-                    ),
-                  ],
+                      AppSpacing.verticalSm,
+                      if (_isLoadingIncomeSources)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_incomeSources.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: AppColors.gray500),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'No hay fuentes de ingreso disponibles',
+                                  style: AppTextStyles.bodySmall(color: AppColors.gray600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        DropdownButtonFormField<IncomeSourceModel>(
+                          value: _selectedIncomeSource,
+                          decoration: InputDecoration(
+                            hintText: 'Selecciona una fuente de ingreso',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.gray300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.gray300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          items: _incomeSources.map((source) {
+                            return DropdownMenuItem(
+                              value: source,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    source.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    '${Formatters.currency(source.amount)} - ${source.frequency}',
+                                    style: AppTextStyles.caption(color: AppColors.gray600),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedIncomeSource = value;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
                 ),
-              ),
 
               AppSpacing.verticalXl,
 
@@ -527,7 +722,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'La transacción quedará como "Sin categorizar" hasta que la categorices manualmente.',
+                        _selectedType == 'expense'
+                            ? (_selectedCategory == null
+                                ? 'La transacción quedará como "Sin categorizar" hasta que la categorices manualmente.'
+                                : 'La transacción será agregada a la categoría "${_selectedCategory!.displayName}".')
+                            : (_selectedIncomeSource == null
+                                ? 'El ingreso quedará como "Sin categorizar" hasta que lo categorices manualmente.'
+                                : 'El ingreso será asociado a "${_selectedIncomeSource!.name}".'),
                         style: AppTextStyles.caption(color: AppColors.blue).copyWith(
                           fontSize: 12,
                         ),
@@ -595,4 +796,3 @@ class _TypeButton extends StatelessWidget {
     );
   }
 }
-
