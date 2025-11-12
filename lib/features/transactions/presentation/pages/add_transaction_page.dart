@@ -39,7 +39,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   IncomeSourceModel? _selectedIncomeSource;
   FixedExpenseModel? _selectedFixedExpense;
 
-  final List<String> _currencies = ['GTQ', 'USD', 'EUR'];
+  static const List<String> _currencies = ['GTQ', 'USD', 'EUR'];
 
   @override
   void initState() {
@@ -465,12 +465,14 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                 vertical: 12,
                               ),
                             ),
-                            items: _currencies.map((currency) {
-                              return DropdownMenuItem(
-                                value: currency,
-                                child: Text(currency),
-                              );
-                            }).toList(),
+                            items: _currencies.isNotEmpty
+                                ? _currencies.map((currency) {
+                                    return DropdownMenuItem<String>(
+                                      value: currency,
+                                      child: Text(currency),
+                                    );
+                                  }).toList()
+                                : [],
                             onChanged: (value) {
                               if (value != null) {
                                 setState(() {
@@ -638,37 +640,39 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               vertical: 12,
                             ),
                           ),
-                          items: _categories.map((category) {
+                          items: _categories.isNotEmpty
+                              ? _categories.map((category) {
                             final categoryColor = category.color != null && category.color!.isNotEmpty
                                 ? Color(int.parse('0xFF${category.color!.substring(1)}'))
                                 : AppColors.gray400;
                             
-                            return DropdownMenuItem(
-                              value: category,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: categoryColor,
-                                      shape: BoxShape.circle,
+                                  return DropdownMenuItem<CategoryModel>(
+                                    value: category,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: BoxDecoration(
+                                            color: categoryColor,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Flexible(
+                                          fit: FlexFit.loose,
+                                          child: Text(
+                                            category.displayName,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Flexible(
-                                    fit: FlexFit.loose,
-                                    child: Text(
-                                      category.displayName,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
+                                  );
+                                }).toList()
+                              : [],
                           onChanged: (value) {
                             setState(() {
                               _selectedCategory = value;
@@ -757,26 +761,28 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               vertical: 12,
                             ),
                           ),
-                          items: _fixedExpenses.map((expense) {
-                            return DropdownMenuItem(
-                              value: expense,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    expense.name,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.w500),
-                                  ),
-                                  Text(
-                                    '${expense.categoryName} - ${Formatters.currency(expense.amount)}',
-                                    style: AppTextStyles.caption(color: AppColors.gray600),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
+                          items: _fixedExpenses.isNotEmpty
+                              ? _fixedExpenses.map((expense) {
+                                  return DropdownMenuItem<FixedExpenseModel>(
+                                    value: expense,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          expense.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                        ),
+                                        Text(
+                                          '${expense.categoryName} - ${Formatters.currency(expense.amount)}',
+                                          style: AppTextStyles.caption(color: AppColors.gray600),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList()
+                              : [],
                           onChanged: (value) {
                             setState(() {
                               _selectedFixedExpense = value;
@@ -870,26 +876,28 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               vertical: 12,
                             ),
                           ),
-                          items: _incomeSources.map((source) {
-                            return DropdownMenuItem(
-                              value: source,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    source.name,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.w500),
-                                  ),
-                                  Text(
-                                    '${Formatters.currency(source.amount)} - ${source.frequency}',
-                                    style: AppTextStyles.caption(color: AppColors.gray600),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
+                          items: _incomeSources.isNotEmpty
+                              ? _incomeSources.map((source) {
+                                  return DropdownMenuItem<IncomeSourceModel>(
+                                    value: source,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          source.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                        ),
+                                        Text(
+                                          '${Formatters.currency(source.amount)} - ${source.frequency}',
+                                          style: AppTextStyles.caption(color: AppColors.gray600),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList()
+                              : [],
                           onChanged: (value) {
                             setState(() {
                               _selectedIncomeSource = value;
