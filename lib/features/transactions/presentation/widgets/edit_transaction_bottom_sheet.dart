@@ -452,6 +452,7 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
                       flex: 2,
                       child: TextFormField(
                         controller: _amountController,
+                        enabled: !_isSubmitting, // Solo deshabilitar cuando se está guardando
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
@@ -460,6 +461,18 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
                           prefixText: _selectedCurrency == 'GTQ' ? 'Q ' : '\$ ',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.gray300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                          ),
+                          disabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.gray300),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
