@@ -81,6 +81,7 @@ class BudgetDeltaModel extends BudgetDelta {
 /// Model for category comparison
 class CategoryComparisonModel extends CategoryComparison {
   const CategoryComparisonModel({
+    super.categoryId,
     required super.category,
     required super.budgeted,
     required super.spent,
@@ -94,6 +95,7 @@ class CategoryComparisonModel extends CategoryComparison {
 
   factory CategoryComparisonModel.fromJson(Map<String, dynamic> json) {
     return CategoryComparisonModel(
+      categoryId: json['category_id'] as int?,
       category: json['category'] as String,
       budgeted: (json['budgeted'] as num).toDouble(),
       spent: (json['spent'] as num).toDouble(),

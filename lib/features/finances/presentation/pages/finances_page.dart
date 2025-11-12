@@ -533,8 +533,13 @@ class _CategoryCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        // Navegar a transacciones con filtro de categoría
-        context.push('/home/transactions?category=${category.slug}');
+        // Navegar a transacciones con filtro de categoría usando el ID
+        if (category.categoryId != null) {
+          context.push('/home/transactions?category=${category.categoryId}');
+        } else {
+          // Fallback a slug si no hay ID disponible
+          context.push('/home/transactions?category=${category.slug}');
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

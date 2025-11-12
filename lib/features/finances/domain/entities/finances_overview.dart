@@ -58,6 +58,7 @@ class BudgetDelta {
 
 /// Category comparison (ideal vs actual)
 class CategoryComparison {
+  final int? categoryId;
   final String category;
   final double budgeted;
   final double spent;
@@ -69,6 +70,7 @@ class CategoryComparison {
   final int transactionCount;
 
   const CategoryComparison({
+    this.categoryId,
     required this.category,
     required this.budgeted,
     required this.spent,
