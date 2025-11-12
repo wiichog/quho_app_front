@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Instrucciones para eliminar tu cuenta y datos personales de QUHO">
+    <title>Eliminación de Datos del Usuario - QUHO</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-size: 24px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        h3 {
+            color: #667eea;
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0dcaf0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .danger {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .method-card {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .method-card h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            font-size: 24px;
+        }
+        
+        .step {
+            background: white;
+            border-left: 3px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .contact-box {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #5568d3;
+            text-decoration: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f9f9f9;
+            font-weight: 600;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🗑️</div>
+            <h1>Eliminación de Datos del Usuario</h1>
+            <p class="subtitle">Cómo eliminar tu cuenta y datos personales de QUHO</p>
+        </div>
+
+        <section>
+            <h2>Información General</h2>
+            <p>
+                En QUHO respetamos tu derecho a eliminar tu información personal. Esta página explica cómo puedes 
+                solicitar la eliminación de tu cuenta y todos los datos asociados a ella.
+            </p>
+            
+            <div class="danger">
+                <strong>⚠️ ADVERTENCIA IMPORTANTE:</strong> La eliminación de tu cuenta es permanente e irreversible. 
+                Una vez eliminada, no podrás recuperar tu cuenta ni ninguno de tus datos.
+            </div>
+        </section>
+
+        <section>
+            <h2>¿Qué Datos se Eliminarán?</h2>
+            <p>Cuando eliminas tu cuenta, eliminamos permanentemente:</p>
+            <ul>
+                <li>Información de perfil (nombre, correo electrónico, teléfono, foto)</li>
+                <li>Todas tus transacciones financieras</li>
+                <li>Presupuestos y categorías personalizadas</li>
+                <li>Fuentes de ingresos y gastos fijos</li>
+                <li>Historial de uso de la aplicación</li>
+                <li>Tokens de autenticación y sesiones activas</li>
+                <li>Configuraciones y preferencias</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>¿Qué Datos se Conservan?</h2>
+            <div class="info">
+                <strong>ℹ️ Nota Legal:</strong> Algunos datos pueden conservarse por requisitos legales, fiscales o 
+                de seguridad durante períodos específicos.
+            </div>
+            <p>Podemos conservar de forma limitada:</p>
+            <ul>
+                <li>Registros de transacciones con requisitos legales (hasta 7 años según legislación aplicable)</li>
+                <li>Información necesaria para prevenir fraude y abuso</li>
+                <li>Datos agregados y anónimos para análisis estadísticos</li>
+                <li>Registros de auditoría de seguridad</li>
+            </ul>
+            <p>
+                Estos datos conservados están disociados de tu identidad personal y no pueden usarse para 
+                identificarte.
+            </p>
+        </section>
+
+        <section>
+            <h2>Métodos para Eliminar tu Cuenta</h2>
+
+            <div class="method-card">
+                <h3><span class="icon">📱</span> Método 1: Desde la Aplicación (Recomendado)</h3>
+                <p>La forma más rápida y sencilla de eliminar tu cuenta:</p>
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <strong>Abre la aplicación QUHO</strong> e inicia sesión en tu cuenta
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <strong>Ve a tu Perfil</strong> tocando el ícono de perfil en la esquina superior derecha
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <strong>Desplázate hacia abajo</strong> hasta la sección "Cuenta"
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <strong>Toca "Eliminar cuenta"</strong> (botón rojo al final de la página)
+                </div>
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <strong>Confirma la eliminación</strong> ingresando tu contraseña cuando se solicite
+                </div>
+                <div class="step">
+                    <span class="step-number">6</span>
+                    <strong>Tu cuenta será eliminada</strong> inmediatamente y recibirás un correo de confirmación
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h3><span class="icon">✉️</span> Método 2: Por Correo Electrónico</h3>
+                <p>Si no puedes acceder a la aplicación, envía un correo electrónico a:</p>
+                <p><strong>Email:</strong> <a href="mailto:delete@quhoapp.com">delete@quhoapp.com</a></p>
+                <p><strong>Asunto:</strong> Solicitud de Eliminación de Cuenta</p>
+                <p><strong>Incluye en tu mensaje:</strong></p>
+                <ul>
+                    <li>Tu correo electrónico registrado en QUHO</li>
+                    <li>Tu nombre completo</li>
+                    <li>Razón de la eliminación (opcional)</li>
+                    <li>Confirmación de que entiendes que la eliminación es permanente</li>
+                </ul>
+                <div class="warning">
+                    <strong>⏱️ Tiempo de procesamiento:</strong> Las solicitudes por correo electrónico se procesan 
+                    dentro de 5 días hábiles. Recibirás una confirmación cuando tu cuenta sea eliminada.
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h3><span class="icon">🌐</span> Método 3: Para Usuarios de Redes Sociales</h3>
+                <p>Si iniciaste sesión usando Google, Apple o Facebook:</p>
+                <ol>
+                    <li>Elimina tu cuenta usando uno de los métodos anteriores (aplicación o correo)</li>
+                    <li>Revoca el acceso de QUHO desde la configuración de tu proveedor:
+                        <ul>
+                            <li><strong>Google:</strong> <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a></li>
+                            <li><strong>Apple:</strong> Configuración → Apple ID → Contraseña y seguridad → Apps que usan Apple ID</li>
+                            <li><strong>Facebook:</strong> Configuración → Seguridad → Apps y sitios web</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section>
+            <h2>Cronología de Eliminación</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tiempo</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Inmediato</strong></td>
+                        <td>Tu cuenta se desactiva y no puedes iniciar sesión</td>
+                    </tr>
+                    <tr>
+                        <td><strong>24 horas</strong></td>
+                        <td>Todos los datos personales identificables se eliminan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7 días</strong></td>
+                        <td>Eliminación de copias de seguridad y cachés</td>
+                    </tr>
+                    <tr>
+                        <td><strong>30 días</strong></td>
+                        <td>Eliminación completa de todos los sistemas</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Alternativas a la Eliminación</h2>
+            <p>Antes de eliminar tu cuenta, considera estas alternativas:</p>
+            
+            <h3>🔒 Desactivar Temporalmente</h3>
+            <p>
+                Puedes cerrar sesión y dejar de usar la aplicación sin eliminar tu cuenta. Tus datos permanecerán 
+                seguros y podrás volver cuando quieras.
+            </p>
+
+            <h3>📤 Exportar tus Datos</h3>
+            <p>
+                Antes de eliminar, puedes exportar todos tus datos financieros. Ve a Perfil → Configuración → 
+                Exportar datos para descargar una copia de tu información.
+            </p>
+
+            <h3>🔄 Restablecer la Aplicación</h3>
+            <p>
+                Si tienes problemas técnicos, contacta a soporte antes de eliminar tu cuenta. Podemos ayudarte a 
+                resolver la mayoría de los problemas.
+            </p>
+        </section>
+
+        <section>
+            <h2>Preguntas Frecuentes</h2>
+            
+            <h3>¿Puedo recuperar mi cuenta después de eliminarla?</h3>
+            <p>
+                No. La eliminación es permanente e irreversible. No guardamos copias de tu información después de 
+                eliminar tu cuenta.
+            </p>
+
+            <h3>¿Qué pasa con mis suscripciones o pagos?</h3>
+            <p>
+                Cancela cualquier suscripción activa antes de eliminar tu cuenta. No procesamos reembolsos por 
+                períodos de suscripción no utilizados después de la eliminación voluntaria.
+            </p>
+
+            <h3>¿Puedo crear una nueva cuenta con el mismo correo?</h3>
+            <p>
+                Sí, después de 30 días de la eliminación completa, puedes registrarte nuevamente con el mismo 
+                correo electrónico. Será una cuenta completamente nueva sin datos previos.
+            </p>
+
+            <h3>¿Recibo confirmación de la eliminación?</h3>
+            <p>
+                Sí, enviaremos un correo electrónico de confirmación a tu dirección registrada una vez que tu 
+                cuenta y datos hayan sido eliminados completamente.
+            </p>
+        </section>
+
+        <div class="contact-box">
+            <h2>¿Necesitas Ayuda?</h2>
+            <p>
+                Si tienes preguntas sobre el proceso de eliminación de datos o necesitas asistencia, contáctanos:
+            </p>
+            <ul>
+                <li><strong>Eliminación de cuenta:</strong> <a href="mailto:delete@quhoapp.com">delete@quhoapp.com</a></li>
+                <li><strong>Soporte general:</strong> <a href="mailto:support@quhoapp.com">support@quhoapp.com</a></li>
+                <li><strong>Privacidad:</strong> <a href="mailto:privacy@quhoapp.com">privacy@quhoapp.com</a></li>
+            </ul>
+            <p style="margin-top: 20px;">
+                <a href="/privacy-policy.html" class="button">Ver Política de Privacidad</a>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; <script>document.write(new Date().getFullYear())</script> QUHO. Todos los derechos reservados.</p>
+            <p>
+                <a href="/privacy-policy.html">Política de Privacidad</a> | 
+                <a href="/user-data-deletion.html">Eliminación de Datos</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+
