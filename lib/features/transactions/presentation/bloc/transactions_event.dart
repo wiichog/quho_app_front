@@ -35,19 +35,21 @@ class LoadTransactionsEvent extends TransactionsEvent {
 /// Aplicar filtros
 class ApplyFiltersEvent extends TransactionsEvent {
   final String? type;
-  final String? category;
+  final String? category; // ID de la categoría
+  final String? categoryName; // Nombre de la categoría para mostrar
   final DateTime? startDate;
   final DateTime? endDate;
 
   const ApplyFiltersEvent({
     this.type,
     this.category,
+    this.categoryName,
     this.startDate,
     this.endDate,
   });
 
   @override
-  List<Object?> get props => [type, category, startDate, endDate];
+  List<Object?> get props => [type, category, categoryName, startDate, endDate];
 }
 
 /// Buscar transacciones

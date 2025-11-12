@@ -534,11 +534,12 @@ class _CategoryCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         // Navegar a transacciones con filtro de categoría usando el ID
+        // El nombre se buscará cuando se cargue la página
         if (category.categoryId != null) {
-          context.push('/home/transactions?category=${category.categoryId}');
+          context.push('/home/transactions?category=${category.categoryId}&categoryName=${Uri.encodeComponent(category.category)}');
         } else {
           // Fallback a slug si no hay ID disponible
-          context.push('/home/transactions?category=${category.slug}');
+          context.push('/home/transactions?category=${category.slug}&categoryName=${Uri.encodeComponent(category.category)}');
         }
       },
       borderRadius: BorderRadius.circular(12),

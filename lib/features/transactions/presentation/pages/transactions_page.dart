@@ -15,10 +15,12 @@ import 'package:quho_app/shared/design_system/design_system.dart';
 /// Página de transacciones con filtros y búsqueda
 class TransactionsPage extends StatefulWidget {
   final String? initialCategoryFilter;
-  
+  final String? initialCategoryName;
+
   const TransactionsPage({
     super.key,
     this.initialCategoryFilter,
+    this.initialCategoryName,
   });
 
   @override
@@ -87,11 +89,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
         initialCategory: currentCategory,
         initialStartDate: currentStartDate,
         initialEndDate: currentEndDate,
-        onApply: (type, category, startDate, endDate) {
+        onApply: (type, categoryId, categoryName, startDate, endDate) {
           blocContext.read<TransactionsBloc>().add(
                 ApplyFiltersEvent(
                   type: type,
-                  category: category,
+                  category: categoryId,
+                  categoryName: categoryName,
                   startDate: startDate,
                   endDate: endDate,
                 ),
@@ -133,10 +136,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
         // Si hay un filtro inicial, cargar directamente con ese filtro
         if (widget.initialCategoryFilter != null) {
           print('[TransactionsPage] Cargando con filtro inicial: ${widget.initialCategoryFilter}');
-          bloc.add(LoadTransactionsEvent(
-            page: 1,
-            isRefresh: true,
+          // Aplicar el filtro con el nombre de la categoría si está disponible
+          bloc.add(ApplyFiltersEvent(
             category: widget.initialCategoryFilter,
+            categoryName: widget.initialCategoryName,
           ));
         } else {
           // Cargar todas las transacciones sin filtro
@@ -298,7 +301,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                             ),
                           if (state.currentCategory != null)
                             _FilterChip(
-                              label: state.currentCategory!,
+                              label: state.currentCategoryName ?? state.currentCategory!,
                               onDeleted: () {
                                 blocBuilderContext.read<TransactionsBloc>().add(
                                       ApplyFiltersEvent(

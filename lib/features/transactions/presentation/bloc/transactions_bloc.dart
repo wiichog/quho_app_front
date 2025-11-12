@@ -127,6 +127,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
           currentPage: 1,
           currentType: event.type,
           currentCategory: event.category,
+          currentCategoryName: event.categoryName,
           currentStartDate: event.startDate,
           currentEndDate: event.endDate,
           currentSearch: state is TransactionsLoaded ? (state as TransactionsLoaded).currentSearch : null,

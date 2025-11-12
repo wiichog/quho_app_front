@@ -26,7 +26,8 @@ class TransactionsLoaded extends TransactionsState {
   final bool hasMore;
   final int currentPage;
   final String? currentType;
-  final String? currentCategory;
+  final String? currentCategory; // ID de la categoría para el filtro
+  final String? currentCategoryName; // Nombre de la categoría para mostrar
   final DateTime? currentStartDate;
   final DateTime? currentEndDate;
   final String? currentSearch;
@@ -39,6 +40,7 @@ class TransactionsLoaded extends TransactionsState {
     required this.currentPage,
     this.currentType,
     this.currentCategory,
+    this.currentCategoryName,
     this.currentStartDate,
     this.currentEndDate,
     this.currentSearch,
@@ -53,6 +55,7 @@ class TransactionsLoaded extends TransactionsState {
         currentPage,
         currentType,
         currentCategory,
+        currentCategoryName,
         currentStartDate,
         currentEndDate,
         currentSearch,
@@ -66,6 +69,7 @@ class TransactionsLoaded extends TransactionsState {
     int? currentPage,
     String? currentType,
     String? currentCategory,
+    String? currentCategoryName,
     DateTime? currentStartDate,
     DateTime? currentEndDate,
     String? currentSearch,
@@ -78,6 +82,7 @@ class TransactionsLoaded extends TransactionsState {
       currentPage: currentPage ?? this.currentPage,
       currentType: currentType ?? this.currentType,
       currentCategory: currentCategory ?? this.currentCategory,
+      currentCategoryName: currentCategoryName ?? this.currentCategoryName,
       currentStartDate: currentStartDate ?? this.currentStartDate,
       currentEndDate: currentEndDate ?? this.currentEndDate,
       currentSearch: currentSearch ?? this.currentSearch,

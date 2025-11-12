@@ -116,8 +116,12 @@ class AppRouter {
             name: 'transactions',
             builder: (context, state) {
               // Leer parámetros de query para filtros pre-aplicados
-              final categorySlug = state.uri.queryParameters['category'];
-              return TransactionsPage(initialCategoryFilter: categorySlug);
+              final categoryId = state.uri.queryParameters['category'];
+              final categoryName = state.uri.queryParameters['categoryName'];
+              return TransactionsPage(
+                initialCategoryFilter: categoryId,
+                initialCategoryName: categoryName != null ? Uri.decodeComponent(categoryName) : null,
+              );
             },
           ),
           GoRoute(
