@@ -11,10 +11,13 @@ import 'package:quho_app/features/finances/domain/entities/finances_overview.dar
 import 'package:quho_app/features/finances/presentation/bloc/finances_bloc.dart';
 import 'package:quho_app/features/finances/presentation/bloc/finances_event.dart';
 import 'package:quho_app/features/finances/presentation/bloc/finances_state.dart';
+import 'package:quho_app/features/finances/presentation/widgets/financial_kpi_card.dart';
+import 'package:quho_app/features/finances/presentation/widgets/comparison_metric_card.dart';
+import 'package:quho_app/features/finances/presentation/widgets/financial_health_score.dart';
 import 'package:quho_app/features/finances/presentation/widgets/ideal_budget_pie_chart.dart';
-import 'package:quho_app/features/finances/presentation/widgets/comparison_bar_chart.dart';
 import 'package:quho_app/shared/design_system/colors/app_colors.dart';
 import 'package:quho_app/shared/design_system/typography/app_text_styles.dart';
+import 'package:quho_app/shared/design_system/spacing/app_spacing.dart';
 
 class FinancesPage extends StatelessWidget {
   const FinancesPage({super.key});
@@ -143,7 +146,6 @@ class _FinancesPageContentState extends State<_FinancesPageContent> {
       ],
       onTap: (index) {
         if (index == 0) {
-          // Navegar a Dashboard
           Navigator.pop(context);
         } else if (index == 2) {
           context.push(RouteNames.profile);
@@ -166,8 +168,68 @@ class _FinancesLoadedContent extends StatelessWidget {
     required this.onNextMonth,
   });
 
+  /// Calculate financial health score (0-100)
+  double _calculateHealthScore() {
+    double score = 100.0;
+    
+    // Penalize if expenses exceed income
+    final incomeVsExpenses = overview.summary.execution.income > 0
+        ? (overview.summary.execution.expenses / overview.summary.execution.income)
+        : 1.0;
+    if (incomeVsExpenses > 0.9) score -= 20; // Spending > 90% of income
+    if (incomeVsExpenses > 1.0) score -= 30; // Spending more than income
+    
+    // Reward if savings target is met
+    final savingsTarget = overview.summary.ideal.savingsTarget ?? 0;
+    final actualNet = overview.summary.execution.net ?? 0;
+    if (savingsTarget > 0 && actualNet >= savingsTarget) {
+      score += 10;
+    } else if (savingsTarget > 0) {
+      final savingsRate = actualNet / savingsTarget;
+      if (savingsRate < 0.5) score -= 20;
+    }
+    
+    // Penalize overspending in categories
+    int overBudgetCount = overview.categoryBreakdown.where((c) => c.isOverBudget).length;
+    score -= (overBudgetCount * 10.0);
+    
+    return score.clamp(0, 100);
+  }
+
+  String _getHealthDescription() {
+    final score = _calculateHealthScore();
+    if (score >= 80) return 'Tu situación financiera es excelente. Sigue así!';
+    if (score >= 60) return 'Tienes una buena gestión financiera. Pequeños ajustes la mejorarán.';
+    if (score >= 40) return 'Tu situación es estable pero hay áreas de mejora.';
+    return 'Tu situación financiera necesita atención inmediata.';
+  }
+
+  /// Calculate burn rate (days until money runs out)
+  int _calculateDaysOfSolvency() {
+    final balance = overview.summary.execution.net ?? 0;
+    if (balance <= 0) return 0;
+    
+    final avgDailyExpense = overview.summary.execution.expenses / DateTime.now().day;
+    if (avgDailyExpense <= 0) return 999; // Infinite
+    
+    return (balance / avgDailyExpense).floor();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final healthScore = _calculateHealthScore();
+    final daysOfSolvency = _calculateDaysOfSolvency();
+    
+    // Calculate execution rate
+    final budgetExecutionRate = overview.summary.ideal.totalBudgeted != null && overview.summary.ideal.totalBudgeted! > 0
+        ? (overview.summary.execution.expenses / overview.summary.ideal.totalBudgeted! * 100)
+        : 0.0;
+    
+    // Calculate savings rate
+    final actualNet = overview.summary.execution.net ?? 0;
+    final savingsTarget = overview.summary.ideal.savingsTarget ?? 0;
+    final savingsRate = savingsTarget > 0 ? (actualNet / savingsTarget * 100) : 0.0;
+
     return CustomScrollView(
       slivers: [
         // App Bar
@@ -216,7 +278,7 @@ class _FinancesLoadedContent extends StatelessWidget {
                           children: [
                             Icon(Icons.logout, size: 20, color: AppColors.red),
                             const SizedBox(width: 8),
-                            Text('Cerrar sesión'),
+                            const Text('Cerrar sesión'),
                           ],
                         ),
                       ),
@@ -239,7 +301,7 @@ class _FinancesLoadedContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('Finanzas', style: AppTextStyles.h3()),
+                  Text('Análisis Financiero', style: AppTextStyles.h3()),
                   const SizedBox(height: 8),
                   // Month selector
                   Row(
@@ -282,239 +344,149 @@ class _FinancesLoadedContent extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // Summary Cards
-              _SummarySection(summary: overview.summary),
-              const SizedBox(height: 24),
-
-              // Pie Chart - Ideal Budget Breakdown
-              IdealBudgetPieChart(categories: overview.idealBudgetBreakdown),
-              const SizedBox(height: 24),
-
-              // Bar Chart - Comparison
-              ComparisonBarChart(categories: overview.categoryBreakdown),
-              const SizedBox(height: 24),
-
-              // Category Breakdown Title
-              Text(
-                'Desglose Detallado por Categoría',
-                style: AppTextStyles.h4(),
+              // ============ SECTION 1: Financial Health Score ============
+              FinancialHealthScore(
+                score: healthScore,
+                description: _getHealthDescription(),
               ),
-              const SizedBox(height: 16),
+              AppSpacing.verticalMd,
 
-              // Category Breakdown List
-              ...overview.categoryBreakdown.map((category) => _CategoryCard(category: category)),
+              // ============ SECTION 2: Key Metrics ============
+              Text(
+                'Métricas Clave',
+                style: AppTextStyles.h4().copyWith(fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.verticalSm,
+              
+              // KPI Row 1
+              Row(
+                children: [
+                  Expanded(
+                    child: FinancialKpiCard(
+                      title: 'Ejecución Presup.',
+                      value: '${budgetExecutionRate.toStringAsFixed(0)}%',
+                      subtitle: 'del presupuesto',
+                      icon: Icons.pie_chart,
+                      iconColor: budgetExecutionRate > 100 ? AppColors.red : AppColors.teal,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FinancialKpiCard(
+                      title: 'Tasa de Ahorro',
+                      value: '${savingsRate.toStringAsFixed(0)}%',
+                      subtitle: 'de la meta',
+                      icon: Icons.savings,
+                      iconColor: savingsRate >= 100 ? AppColors.green : AppColors.orange,
+                    ),
+                  ),
+                ],
+              ),
+              AppSpacing.verticalSm,
+              
+              // KPI Row 2
+              Row(
+                children: [
+                  Expanded(
+                    child: FinancialKpiCard(
+                      title: 'Balance Neto',
+                      value: Formatters.currency(actualNet),
+                      subtitle: actualNet >= 0 ? 'Superávit' : 'Déficit',
+                      icon: actualNet >= 0 ? Icons.trending_up : Icons.trending_down,
+                      iconColor: actualNet >= 0 ? AppColors.green : AppColors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FinancialKpiCard(
+                      title: 'Días de Solvencia',
+                      value: daysOfSolvency >= 999 ? '∞' : '$daysOfSolvency',
+                      subtitle: 'días cubiertos',
+                      icon: Icons.calendar_today,
+                      iconColor: daysOfSolvency > 30 
+                          ? AppColors.green 
+                          : (daysOfSolvency > 15 ? AppColors.orange : AppColors.red),
+                    ),
+                  ),
+                ],
+              ),
+              AppSpacing.verticalMd,
+
+              // ============ SECTION 3: Comparison Teórico vs Real ============
+              Text(
+                'Presupuesto vs Ejecución',
+                style: AppTextStyles.h4().copyWith(fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.verticalSm,
+              
+              // Income comparison
+              ComparisonMetricCard(
+                title: 'Ingresos',
+                theoretical: overview.summary.ideal.income,
+                actual: overview.summary.execution.income,
+                icon: Icons.arrow_upward,
+                higherIsBetter: true,
+              ),
+              AppSpacing.verticalSm,
+              
+              // Expenses comparison
+              ComparisonMetricCard(
+                title: 'Gastos',
+                theoretical: overview.summary.ideal.expenses,
+                actual: overview.summary.execution.expenses,
+                icon: Icons.arrow_downward,
+                higherIsBetter: false,
+              ),
+              AppSpacing.verticalSm,
+              
+              // Savings comparison
+              ComparisonMetricCard(
+                title: 'Ahorro',
+                theoretical: savingsTarget,
+                actual: actualNet,
+                icon: Icons.account_balance_wallet,
+                higherIsBetter: true,
+              ),
+              AppSpacing.verticalMd,
+
+              // ============ SECTION 4: Budget Distribution ============
+              Text(
+                'Distribución del Presupuesto',
+                style: AppTextStyles.h4().copyWith(fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.verticalSm,
+              IdealBudgetPieChart(categories: overview.idealBudgetBreakdown),
+              AppSpacing.verticalMd,
+
+              // ============ SECTION 5: Category Breakdown ============
+              Text(
+                'Desglose por Categoría',
+                style: AppTextStyles.h4().copyWith(fontWeight: FontWeight.bold),
+              ),
+              AppSpacing.verticalSm,
+
+              // Sort categories: not at 100%, then at 100%, then negative
+              ...(_sortCategories(overview.categoryBreakdown).map(
+                (category) => _CategoryCard(category: category),
+              )),
             ]),
           ),
         ),
       ],
     );
   }
-}
 
-/// Summary section with ideal vs execution
-class _SummarySection extends StatelessWidget {
-  final FinancesSummary summary;
-
-  const _SummarySection({required this.summary});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Income & Expenses Row
-        Row(
-          children: [
-            Expanded(
-              child: _SummaryCard(
-                title: 'Ingresos',
-                ideal: summary.ideal.income,
-                actual: summary.execution.income,
-                delta: summary.delta.income,
-                icon: Icons.trending_up,
-                isPositive: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _SummaryCard(
-                title: 'Gastos',
-                ideal: summary.ideal.expenses,
-                actual: summary.execution.expenses,
-                delta: summary.delta.expenses,
-                icon: Icons.trending_down,
-                isPositive: false,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        // Savings Card
-        _SavingsCard(
-          savingsTarget: summary.ideal.savingsTarget ?? 0,
-          actualSavings: summary.execution.net ?? 0,
-          delta: summary.delta.savings,
-        ),
-      ],
-    );
-  }
-}
-
-/// Individual summary card
-class _SummaryCard extends StatelessWidget {
-  final String title;
-  final double ideal;
-  final double actual;
-  final double delta;
-  final IconData icon;
-  final bool isPositive;
-
-  const _SummaryCard({
-    required this.title,
-    required this.ideal,
-    required this.actual,
-    required this.delta,
-    required this.icon,
-    required this.isPositive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final percentage = ideal > 0 ? ((actual / ideal) * 100) : 0;
-    final isGood = isPositive ? (delta >= 0) : (delta <= 0);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: AppColors.gray600),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: AppTextStyles.bodySmall().copyWith(color: AppColors.gray600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            Formatters.currency(actual),
-            style: AppTextStyles.h4().copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'de ${Formatters.currency(ideal)}',
-            style: AppTextStyles.bodySmall().copyWith(color: AppColors.gray500),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                isGood ? Icons.check_circle : Icons.warning,
-                size: 14,
-                color: isGood ? AppColors.green : AppColors.orange,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${percentage.toStringAsFixed(0)}%',
-                style: AppTextStyles.bodySmall().copyWith(
-                  color: isGood ? AppColors.green : AppColors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Savings card
-class _SavingsCard extends StatelessWidget {
-  final double savingsTarget;
-  final double actualSavings;
-  final double delta;
-
-  const _SavingsCard({
-    required this.savingsTarget,
-    required this.actualSavings,
-    required this.delta,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final percentage = savingsTarget > 0 ? ((actualSavings / savingsTarget) * 100) : 0;
-    final isGood = delta >= 0;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.greenLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.savings, color: AppColors.green),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ahorro',
-                  style: AppTextStyles.bodySmall().copyWith(color: AppColors.gray600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  Formatters.currency(actualSavings),
-                  style: AppTextStyles.h4().copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Meta: ${Formatters.currency(savingsTarget)}',
-                  style: AppTextStyles.bodySmall().copyWith(color: AppColors.gray500),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Icon(
-                isGood ? Icons.trending_up : Icons.trending_down,
-                size: 20,
-                color: isGood ? AppColors.green : AppColors.red,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${percentage.toStringAsFixed(0)}%',
-                style: AppTextStyles.h5().copyWith(
-                  color: isGood ? AppColors.green : AppColors.red,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  List<CategoryComparison> _sortCategories(List<CategoryComparison> categories) {
+    final notAtLimit = categories.where((c) => !c.hasNoBudget && c.percentageUsed < 100).toList();
+    final atLimit = categories.where((c) => !c.hasNoBudget && c.percentageUsed >= 100 && c.percentageUsed <= 100).toList();
+    final overBudget = categories.where((c) => !c.hasNoBudget && c.percentageUsed > 100).toList();
+    final noBudget = categories.where((c) => c.hasNoBudget).toList();
+    
+    // Sort each group by percentage
+    notAtLimit.sort((a, b) => b.percentageUsed.compareTo(a.percentageUsed));
+    overBudget.sort((a, b) => b.percentageUsed.compareTo(a.percentageUsed));
+    
+    return [...notAtLimit, ...atLimit, ...overBudget, ...noBudget];
   }
 }
 
@@ -544,6 +516,7 @@ class _CategoryCard extends StatelessWidget {
       'credit_card': Icons.credit_card,
       'savings': Icons.savings,
       'more_horiz': Icons.more_horiz,
+      'fastfood': Icons.fastfood,
     };
     return iconMap[iconName] ?? Icons.category;
   }
@@ -556,7 +529,7 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final percentage = category.percentageUsed.clamp(0, 100);
+    final percentage = category.percentageUsed.clamp(0, 150);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -652,7 +625,10 @@ class _CategoryCard extends StatelessWidget {
                   ),
                   Text(
                     Formatters.currency(category.spent),
-                    style: AppTextStyles.bodyMedium().copyWith(fontWeight: FontWeight.w600),
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: category.isOverBudget ? AppColors.red : AppColors.gray900,
+                    ),
                   ),
                 ],
               ),
@@ -691,30 +667,6 @@ class _CategoryCard extends StatelessWidget {
                     child: Text(
                       'Excediste tu presupuesto por ${Formatters.currency(category.spent - category.budgeted)}',
                       style: AppTextStyles.bodySmall().copyWith(color: AppColors.red),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // No budget warning
-          if (category.hasNoBudget) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.orangeLight,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info, size: 16, color: AppColors.orange),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sin presupuesto asignado',
-                      style: AppTextStyles.bodySmall().copyWith(color: AppColors.orange),
                     ),
                   ),
                 ],
