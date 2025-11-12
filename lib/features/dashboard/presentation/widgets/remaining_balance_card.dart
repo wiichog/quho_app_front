@@ -594,18 +594,36 @@ class _DailyBudgetBreakdownModalState extends State<_DailyBudgetBreakdownModal> 
                 ),
                 AppSpacing.verticalSm,
                 
-                // Lista de gastos fijos
+                // Lista de gastos fijos (filtrar los que ya están pagados completamente)
                 if (_fixedExpenses != null && _fixedExpenses!.isNotEmpty) ...[
-                  ...(_fixedExpenses!.map((expense) => _buildFixedExpenseItem(expense))),
-                  AppSpacing.verticalXs,
-                  Divider(color: AppColors.gray300),
-                  AppSpacing.verticalXs,
-                  _BreakdownRow(
-                    label: 'Total gastos fijos pendientes',
-                    value: Formatters.currency(pendingFixedExpenses),
-                    explanation: null,
-                    isPositive: false,
-                  ),
+                  ...(_fixedExpenses!.where((expense) {
+                    // Mostrar solo gastos que:
+                    // 1. Estén ignorados (para que usuario pueda ver qué ignoró)
+                    // 2. Estén marcados como completados (para que usuario pueda ver qué completó)
+                    // 3. Tengan saldo pendiente (remaining > 0)
+                    final tracking = expense.tracking;
+                    if (tracking == null) return true; // Sin tracking, mostrar
+                    
+                    final isIgnored = tracking.isIgnored;
+                    final isClosed = tracking.isClosed;
+                    final remaining = tracking.remainingAmount;
+                    
+                    // Mostrar si está ignorado, completado, o tiene saldo pendiente
+                    return isIgnored || isClosed || remaining > 0;
+                  }).map((expense) => _buildFixedExpenseItem(expense))),
+                  
+                  // Solo mostrar divider y total si hay gastos pendientes
+                  if (pendingFixedExpenses > 0) ...[
+                    AppSpacing.verticalXs,
+                    Divider(color: AppColors.gray300),
+                    AppSpacing.verticalXs,
+                    _BreakdownRow(
+                      label: 'Total gastos fijos pendientes',
+                      value: Formatters.currency(pendingFixedExpenses),
+                      explanation: null,
+                      isPositive: false,
+                    ),
+                  ],
                 ] else
                   Container(
                     padding: AppSpacing.paddingSm,
