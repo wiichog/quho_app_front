@@ -41,6 +41,13 @@ abstract class AuthRemoteDataSource {
   Future<UserModel> getCurrentUser();
 
   Future<void> logout({required String refreshToken});
+
+  Future<AuthResponseModel> socialAuth({
+    required String provider,
+    required String accessToken,
+    String? idToken,
+    String? authorizationCode,
+  });
 }
 
 /// Implementación del datasource remoto de autenticación
@@ -314,6 +321,57 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         originalException: e,
       );
     } catch (e) {
+      throw UnexpectedException(
+        message: 'Error inesperado',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<AuthResponseModel> socialAuth({
+    required String provider,
+    required String accessToken,
+    String? idToken,
+    String? authorizationCode,
+  }) async {
+    try {
+      print('🔵 [AUTH_DATASOURCE] Social auth con $provider');
+      
+      final Map<String, dynamic> data = {
+        'provider': provider,
+        'access_token': accessToken,
+      };
+
+      if (idToken != null) {
+        data['id_token'] = idToken;
+      }
+
+      if (authorizationCode != null) {
+        data['authorization_code'] = authorizationCode;
+      }
+
+      final response = await apiClient.post(
+        '${AppConstants.authEndpoint}/social/$provider/',
+        data: data,
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      final authResponse = AuthResponseModel.fromJson(responseData);
+      
+      print('✅ [AUTH_DATASOURCE] Social auth exitoso');
+      return authResponse;
+    } on DioException catch (e) {
+      print('❌ [AUTH_DATASOURCE] Error en social auth: ${e.message}');
+      if (e.error is Exception) {
+        throw e.error as Exception;
+      }
+      throw UnexpectedException(
+        message: 'Error en autenticación social',
+        originalException: e,
+      );
+    } catch (e) {
+      print('❌ [AUTH_DATASOURCE] Error inesperado: $e');
       throw UnexpectedException(
         message: 'Error inesperado',
         originalException: e,

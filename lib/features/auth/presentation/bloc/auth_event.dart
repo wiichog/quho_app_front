@@ -82,3 +82,18 @@ class LogoutEvent extends AuthEvent {
   const LogoutEvent();
 }
 
+/// Social Auth - Google
+class GoogleSignInEvent extends AuthEvent {
+  const GoogleSignInEvent();
+}
+
+/// Social Auth - Apple
+class AppleSignInEvent extends AuthEvent {
+  const AppleSignInEvent();
+}
+
+/// Social Auth - Facebook
+class FacebookSignInEvent extends AuthEvent {
+  const FacebookSignInEvent();
+}
+
