@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:quho_app/core/config/app_config.dart';
 import 'package:quho_app/core/config/environment.dart';
 import 'package:quho_app/core/routes/app_router.dart';
@@ -17,6 +18,11 @@ void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
   print('✅ Flutter binding inicializado');
+
+  // Initialize date formatting for locales
+  await initializeDateFormatting('es_MX', null);
+  await initializeDateFormatting('es', null);
+  print('✅ Locales de fecha inicializados');
 
   // Setup dependencies (API Client, Storage, etc.)
   print('⚙️  Configurando dependencias...');
