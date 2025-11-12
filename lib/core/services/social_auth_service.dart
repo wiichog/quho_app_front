@@ -28,23 +28,45 @@ class SocialAuthResult {
 
 /// Servicio para manejar autenticación social con Google, Apple y Facebook
 class SocialAuthService {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
+  GoogleSignIn? _googleSignIn;
+
+  /// Obtiene la instancia de GoogleSignIn (lazy initialization)
+  GoogleSignIn get googleSignIn {
+    if (_googleSignIn == null) {
+      try {
+        _googleSignIn = GoogleSignIn(
+          scopes: ['email', 'profile'],
+        );
+      } catch (e) {
+        // Si hay un error de configuración, lanzar un error más claro
+        if (e.toString().contains('ClientID not set') || 
+            e.toString().contains('google-signin-client_id')) {
+          throw Exception(
+            'Google Sign-In no está configurado. Por favor, agrega el meta tag '
+            '<meta name="google-signin-client_id" content="TU_CLIENT_ID"> '
+            'en web/index.html. Obtén tu Client ID en: '
+            'https://console.cloud.google.com/apis/credentials'
+          );
+        }
+        rethrow;
+      }
+    }
+    return _googleSignIn!;
+  }
 
   /// Sign in con Google
   Future<SocialAuthResult?> signInWithGoogle() async {
     try {
-      print('🔵 [SOCIAL_AUTH] Iniciando Google Sign In...');
+      print('[SOCIAL_AUTH] Iniciando Google Sign In...');
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
-        print('⚠️ [SOCIAL_AUTH] Usuario canceló Google Sign In');
+        print('[SOCIAL_AUTH] Usuario canceló Google Sign In');
         return null;
       }
 
-      print('✅ [SOCIAL_AUTH] Usuario autenticado: ${googleUser.email}');
+      print('[SOCIAL_AUTH] Usuario autenticado: ${googleUser.email}');
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
@@ -58,8 +80,19 @@ class SocialAuthService {
         profilePictureUrl: googleUser.photoUrl,
       );
     } catch (e, stackTrace) {
-      print('❌ [SOCIAL_AUTH] Error en Google Sign In: $e');
+      print('[SOCIAL_AUTH] Error en Google Sign In: $e');
       print('Stack trace: $stackTrace');
+      
+      // Si es un error de configuración, lanzar un error más claro
+      if (e.toString().contains('ClientID not set') || 
+          e.toString().contains('google-signin-client_id')) {
+        throw Exception(
+          'Google Sign-In no está configurado correctamente. '
+          'Por favor, agrega el meta tag con tu Client ID en web/index.html. '
+          'Consulta la documentación para más detalles.'
+        );
+      }
+      
       rethrow;
     }
   }
@@ -79,7 +112,7 @@ class SocialAuthService {
           ],
         );
 
-        print('✅ [SOCIAL_AUTH] Apple Sign In exitoso (Web)');
+        print('[SOCIAL_AUTH] Apple Sign In exitoso (Web)');
 
         return SocialAuthResult(
           provider: 'apple',
@@ -98,7 +131,7 @@ class SocialAuthService {
           ],
         );
 
-        print('✅ [SOCIAL_AUTH] Apple Sign In exitoso');
+        print('[SOCIAL_AUTH] Apple Sign In exitoso');
 
         return SocialAuthResult(
           provider: 'apple',
@@ -110,7 +143,7 @@ class SocialAuthService {
         );
       }
     } catch (e, stackTrace) {
-      print('❌ [SOCIAL_AUTH] Error en Apple Sign In: $e');
+      print('[SOCIAL_AUTH] Error en Apple Sign In: $e');
       print('Stack trace: $stackTrace');
       rethrow;
     }
@@ -126,7 +159,7 @@ class SocialAuthService {
       );
 
       if (result.status == LoginStatus.success) {
-        print('✅ [SOCIAL_AUTH] Facebook login exitoso');
+        print('[SOCIAL_AUTH] Facebook login exitoso');
 
         // Obtener datos del usuario
         final userData = await FacebookAuth.instance.getUserData();
@@ -140,14 +173,14 @@ class SocialAuthService {
           profilePictureUrl: userData['picture']?['data']?['url'],
         );
       } else if (result.status == LoginStatus.cancelled) {
-        print('⚠️ [SOCIAL_AUTH] Usuario canceló Facebook Sign In');
+        print('[SOCIAL_AUTH] Usuario canceló Facebook Sign In');
         return null;
       } else {
-        print('❌ [SOCIAL_AUTH] Error en Facebook Sign In: ${result.message}');
+        print('[SOCIAL_AUTH] Error en Facebook Sign In: ${result.message}');
         throw Exception(result.message ?? 'Error desconocido en Facebook login');
       }
     } catch (e, stackTrace) {
-      print('❌ [SOCIAL_AUTH] Error en Facebook Sign In: $e');
+      print('[SOCIAL_AUTH] Error en Facebook Sign In: $e');
       print('Stack trace: $stackTrace');
       rethrow;
     }
@@ -156,10 +189,12 @@ class SocialAuthService {
   /// Cerrar sesión de Google
   Future<void> signOutGoogle() async {
     try {
-      await _googleSignIn.signOut();
-      print('✅ [SOCIAL_AUTH] Sesión de Google cerrada');
+      if (_googleSignIn != null) {
+        await _googleSignIn!.signOut();
+        print('[SOCIAL_AUTH] Sesión de Google cerrada');
+      }
     } catch (e) {
-      print('❌ [SOCIAL_AUTH] Error cerrando sesión de Google: $e');
+      print('[SOCIAL_AUTH] Error cerrando sesión de Google: $e');
     }
   }
 
@@ -179,7 +214,7 @@ class SocialAuthService {
       signOutGoogle(),
       signOutFacebook(),
     ]);
-    print('✅ [SOCIAL_AUTH] Todas las sesiones sociales cerradas');
+    print('[SOCIAL_AUTH] Todas las sesiones sociales cerradas');
   }
 }
 
