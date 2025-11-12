@@ -112,11 +112,6 @@ class _DashboardView extends StatelessWidget {
           label: 'Finanzas',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.emoji_events_outlined),
-          activeIcon: Icon(Icons.emoji_events),
-          label: 'Desafíos',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
           label: 'Perfil',
@@ -127,8 +122,6 @@ class _DashboardView extends StatelessWidget {
           // Navegar a Finanzas
           context.push(RouteNames.finances);
         } else if (index == 2) {
-          context.push(RouteNames.gamification);
-        } else if (index == 3) {
           context.push(RouteNames.profile);
         }
       },

@@ -19,7 +19,7 @@ class TransactionsRemoteDataSourceImpl implements TransactionsRemoteDataSource {
   Future<PaginatedTransactions> getTransactions(GetTransactionsParams params) async {
     try {
       print('🔵 [DATASOURCE] Solicitando transacciones con filtros');
-      print('📦 [DATASOURCE] Params: page=${params.page}, limit=${params.limit}, type=${params.type}');
+      print('📦 [DATASOURCE] Params: page=${params.page}, limit=${params.limit}, type=${params.type}, category=${params.category}, search=${params.search}');
 
       // Construir query parameters
       final queryParams = <String, dynamic>{
@@ -30,23 +30,30 @@ class TransactionsRemoteDataSourceImpl implements TransactionsRemoteDataSource {
 
       if (params.type != null) {
         queryParams['transaction_type'] = params.type;
+        print('✅ [DATASOURCE] Filtro tipo agregado: ${params.type}');
       }
 
       if (params.category != null) {
         queryParams['category'] = params.category;
+        print('✅ [DATASOURCE] Filtro categoría agregado: ${params.category}');
       }
 
       if (params.startDate != null) {
         queryParams['start_date'] = params.startDate!.toIso8601String().split('T')[0];
+        print('✅ [DATASOURCE] Filtro fecha inicio agregado: ${queryParams['start_date']}');
       }
 
       if (params.endDate != null) {
         queryParams['end_date'] = params.endDate!.toIso8601String().split('T')[0];
+        print('✅ [DATASOURCE] Filtro fecha fin agregado: ${queryParams['end_date']}');
       }
 
       if (params.search != null && params.search!.isNotEmpty) {
         queryParams['search'] = params.search;
+        print('✅ [DATASOURCE] Filtro búsqueda agregado: ${params.search}');
       }
+
+      print('📦 [DATASOURCE] Query params finales: $queryParams');
 
       final response = await apiClient.get(
         AppConstants.transactionsEndpoint,
