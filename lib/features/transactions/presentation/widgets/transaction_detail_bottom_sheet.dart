@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:quho_app/core/config/app_config.dart';
 import 'package:quho_app/core/utils/formatters.dart';
 import 'package:quho_app/core/utils/helpers.dart';
+import 'package:quho_app/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
 import 'package:quho_app/features/dashboard/domain/entities/transaction.dart';
 import 'package:quho_app/features/transactions/presentation/widgets/edit_transaction_bottom_sheet.dart';
 import 'package:quho_app/shared/design_system/design_system.dart';
@@ -8,11 +10,91 @@ import 'package:quho_app/shared/design_system/design_system.dart';
 /// Bottom sheet con el detalle completo de una transacción
 class TransactionDetailBottomSheet extends StatelessWidget {
   final Transaction transaction;
+  final VoidCallback? onUpdated; // Callback para recargar después de actualizar
 
   const TransactionDetailBottomSheet({
     super.key,
     required this.transaction,
+    this.onUpdated,
   });
+
+  Future<void> _uncategorizeTransaction(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    // Mostrar diálogo de confirmación
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quitar categoría'),
+        content: const Text(
+          '¿Deseas quitar la categoría de esta transacción? '
+          'Volverá al módulo de recategorización en el inicio.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.teal,
+            ),
+            child: const Text('Quitar categoría'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final datasource = getIt<DashboardRemoteDataSource>();
+      await datasource.uncategorizeTransaction(
+        transactionId: transaction.id,
+      );
+
+      // Cerrar loading
+      navigator.pop();
+      
+      // Cerrar el bottom sheet
+      navigator.pop();
+
+      // Mostrar mensaje de éxito
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Categoría eliminada. La transacción volverá al módulo de recategorización.'),
+          backgroundColor: AppColors.green,
+        ),
+      );
+
+      // Llamar callback para recargar
+      onUpdated?.call();
+    } catch (e) {
+      // Cerrar loading si está abierto
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+      
+      // Mostrar error
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Error al quitar categoría: ${e.toString()}'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +102,7 @@ class TransactionDetailBottomSheet extends StatelessWidget {
     final categoryIcon = Helpers.getCategoryIcon(transaction.category);
     final amountColor = transaction.isIncome ? AppColors.green : AppColors.red;
     final amountPrefix = transaction.isIncome ? '+' : '-';
+    final isCategorized = transaction.category != 'Sin categoría';
 
     return Container(
       decoration: const BoxDecoration(
@@ -98,27 +181,12 @@ class TransactionDetailBottomSheet extends StatelessWidget {
               '$amountPrefix${Formatters.currency(transaction.amount)}',
               style: TextStyle(
                 fontSize: 36,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.bold,
                 color: amountColor,
-                height: 1.2,
               ),
             ),
 
-            // Moneda original si aplica
-            if (transaction.originalCurrency != null &&
-                transaction.originalCurrency != 'GTQ' &&
-                transaction.originalAmount != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                Formatters.currencyWithCode(
-                  transaction.originalCurrency!,
-                  transaction.originalAmount!,
-                ),
-                style: AppTextStyles.bodyMedium(color: AppColors.gray600),
-              ),
-            ],
-
-            AppSpacing.verticalLg,
+            AppSpacing.verticalMd,
 
             // Detalles
             Padding(
@@ -126,47 +194,31 @@ class TransactionDetailBottomSheet extends StatelessWidget {
               child: Column(
                 children: [
                   _DetailRow(
-                    icon: Icons.description_outlined,
-                    label: 'Descripción',
-                    value: transaction.description,
-                  ),
-                  const Divider(height: 24),
-                  _DetailRow(
                     icon: Icons.category_outlined,
                     label: 'Categoría',
                     value: transaction.category,
                     valueColor: categoryColor,
                   ),
-                  const Divider(height: 24),
+                  AppSpacing.verticalMd,
                   _DetailRow(
-                    icon: Icons.calendar_today_outlined,
-                    label: 'Fecha',
-                    value: Formatters.date(transaction.date),
+                    icon: Icons.description_outlined,
+                    label: 'Descripción',
+                    value: transaction.description,
                   ),
                   if (transaction.merchantDisplayName != null) ...[
-                    const Divider(height: 24),
+                    AppSpacing.verticalMd,
                     _DetailRow(
                       icon: Icons.store_outlined,
                       label: 'Comercio',
                       value: transaction.merchantDisplayName!,
                     ),
                   ],
-                  if (transaction.incomeSourceName != null) ...[
-                    const Divider(height: 24),
-                    _DetailRow(
-                      icon: Icons.account_balance_wallet_outlined,
-                      label: 'Fuente de ingreso',
-                      value: transaction.incomeSourceName!,
-                    ),
-                  ],
-                  if (transaction.exchangeRate != null) ...[
-                    const Divider(height: 24),
-                    _DetailRow(
-                      icon: Icons.currency_exchange_outlined,
-                      label: 'Tipo de cambio',
-                      value: Formatters.decimal(transaction.exchangeRate!),
-                    ),
-                  ],
+                  AppSpacing.verticalMd,
+                  _DetailRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Fecha',
+                    value: Formatters.date(transaction.date),
+                  ),
                 ],
               ),
             ),
@@ -176,47 +228,68 @@ class TransactionDetailBottomSheet extends StatelessWidget {
             // Botones de acción
             Padding(
               padding: AppSpacing.paddingLg,
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        // Abrir modal de edición
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => EditTransactionBottomSheet(
-                            transaction: transaction,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => EditTransactionBottomSheet(
+                                transaction: transaction,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Editar'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.teal,
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Editar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.teal,
-                        side: const BorderSide(color: AppColors.teal),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                      AppSpacing.horizontalMd,
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            // TODO: Implementar eliminación
+                          },
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          label: const Text('Eliminar'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.red,
+                            side: const BorderSide(color: AppColors.red),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // Botón de quitar categoría (solo si está categorizada)
+                  if (isCategorized) ...[
+                    AppSpacing.verticalSm,
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _uncategorizeTransaction(context),
+                        icon: const Icon(Icons.remove_circle_outline, size: 18),
+                        label: const Text('Quitar categoría'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.orange,
+                          side: const BorderSide(color: AppColors.orange),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
                       ),
                     ),
-                  ),
-                  AppSpacing.horizontalMd,
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        // TODO: Implementar eliminación
-                      },
-                      icon: const Icon(Icons.delete_outline, size: 18),
-                      label: const Text('Eliminar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.red,
-                        side: const BorderSide(color: AppColors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
