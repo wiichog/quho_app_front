@@ -147,119 +147,125 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Balance Disponible',
-                style: AppTextStyles.bodyMedium(color: AppColors.white.withOpacity(0.9)),
-              ),
-              if (!_isEditing)
-                InkWell(
-                  onTap: _startEditing,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: AppColors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          AppSpacing.verticalSm,
-          if (_isEditing)
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Q ',
-                  style: AppTextStyles.h1(color: AppColors.white),
+                  'Balance Disponible',
+                  style: AppTextStyles.bodyMedium(color: AppColors.white.withOpacity(0.9)),
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: AppTextStyles.h1(color: AppColors.white),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '0.00',
-                      hintStyle: AppTextStyles.h1(
-                        color: AppColors.white.withOpacity(0.5),
+                if (!_isEditing)
+                  InkWell(
+                    onTap: _startEditing,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: AppColors.white,
+                        size: 20,
                       ),
                     ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                    ],
-                    autofocus: true,
                   ),
-                ),
               ],
-            )
-          else
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                Formatters.currency(widget.balance),
-                style: AppTextStyles.h1(color: AppColors.white).copyWith(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+            ),
+            AppSpacing.verticalSm,
+            if (_isEditing)
+              Row(
+                children: [
+                  Text(
+                    'Q ',
+                    style: AppTextStyles.h1(color: AppColors.white),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: AppTextStyles.h1(color: AppColors.white),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: '0.00',
+                        hintStyle: AppTextStyles.h1(
+                          color: AppColors.white.withOpacity(0.5),
+                        ),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                      ],
+                      autofocus: true,
+                    ),
+                  ),
+                ],
+              )
+            else
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  Formatters.currency(widget.balance),
+                  style: AppTextStyles.h1(color: AppColors.white).copyWith(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-          if (_isEditing) ...[
-            AppSpacing.verticalSm,
-            Text(
-              'Ingresa el balance real de tu cuenta bancaria',
-              style: AppTextStyles.caption(color: AppColors.white.withOpacity(0.8)),
-            ),
-            AppSpacing.verticalMd,
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isSaving ? null : _cancelEditing,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.white),
-                      foregroundColor: AppColors.white,
+            if (_isEditing) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Ingresa el balance real de tu cuenta bancaria',
+                style: AppTextStyles.caption(color: AppColors.white.withOpacity(0.8)),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isSaving ? null : _cancelEditing,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.white),
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Cancelar'),
                     ),
-                    child: const Text('Cancelar'),
                   ),
-                ),
-                AppSpacing.horizontalMd,
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : _saveChanges,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.white,
-                      foregroundColor: AppColors.teal,
-                      disabledBackgroundColor: AppColors.gray300,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveChanges,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.white,
+                        foregroundColor: AppColors.teal,
+                        disabledBackgroundColor: AppColors.gray300,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.teal),
+                              ),
+                            )
+                          : const Text('Guardar'),
                     ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.teal),
-                            ),
-                          )
-                        : const Text('Guardar'),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
