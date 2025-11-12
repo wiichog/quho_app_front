@@ -542,7 +542,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: Color(int.parse('0xFF${category.color.substring(1)}')),
+                                      color: category.color != null && category.color!.isNotEmpty
+                                          ? Color(int.parse('0xFF${category.color!.substring(1)}'))
+                                          : AppColors.gray400,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
