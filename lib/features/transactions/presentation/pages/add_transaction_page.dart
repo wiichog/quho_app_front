@@ -41,6 +41,23 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   static const List<String> _currencies = ['GTQ', 'USD', 'EUR'];
 
+  // Helper para verificar de forma segura si una lista está vacía (compatible con Flutter Web)
+  bool _isListEmpty<T>(List<T> list) {
+    try {
+      return list.isEmpty;
+    } catch (e) {
+      return true; // Si hay error, asumir que está vacía
+    }
+  }
+
+  bool _isListNotEmpty<T>(List<T> list) {
+    try {
+      return list.isNotEmpty;
+    } catch (e) {
+      return false; // Si hay error, asumir que está vacía
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -465,7 +482,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                 vertical: 12,
                               ),
                             ),
-                            items: _currencies.isNotEmpty
+                            items: _isListNotEmpty(_currencies)
                                 ? _currencies.map((currency) {
                                     return DropdownMenuItem<String>(
                                       value: currency,
@@ -598,7 +615,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             child: CircularProgressIndicator(),
                           ),
                         )
-                      else if (_categories.isEmpty)
+                      else if (_isListEmpty(_categories))
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -640,7 +657,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               vertical: 12,
                             ),
                           ),
-                          items: _categories.isNotEmpty
+                          items: _isListNotEmpty(_categories)
                               ? _categories.map((category) {
                             final categoryColor = category.color != null && category.color!.isNotEmpty
                                 ? Color(int.parse('0xFF${category.color!.substring(1)}'))
@@ -719,7 +736,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             child: CircularProgressIndicator(),
                           ),
                         )
-                      else if (_fixedExpenses.isEmpty)
+                      else if (_isListEmpty(_fixedExpenses))
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -761,7 +778,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               vertical: 12,
                             ),
                           ),
-                          items: _fixedExpenses.isNotEmpty
+                          items: _isListNotEmpty(_fixedExpenses)
                               ? _fixedExpenses.map((expense) {
                                   return DropdownMenuItem<FixedExpenseModel>(
                                     value: expense,
@@ -834,7 +851,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             child: CircularProgressIndicator(),
                           ),
                         )
-                      else if (_incomeSources.isEmpty)
+                      else if (_isListEmpty(_incomeSources))
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -876,7 +893,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               vertical: 12,
                             ),
                           ),
-                          items: _incomeSources.isNotEmpty
+                          items: _isListNotEmpty(_incomeSources)
                               ? _incomeSources.map((source) {
                                   return DropdownMenuItem<IncomeSourceModel>(
                                     value: source,
