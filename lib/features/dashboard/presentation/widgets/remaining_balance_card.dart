@@ -38,7 +38,7 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _DailyBudgetBreakdownModal(
+      builder: (modalContext) => _DailyBudgetBreakdownModal(
         remainingForMonth: widget.remainingForMonth,
         daysRemaining: widget.daysRemaining,
         balance: widget.balance,
@@ -48,6 +48,7 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
         actualExpenses: widget.actualExpenses,
         totalSavings: widget.totalSavings,
         daysInMonth: widget.daysInMonth,
+        parentContext: context, // Pasar el context del dashboard para recargar
       ),
     );
   }
@@ -207,7 +208,7 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
 }
 
 /// Modal que muestra el desglose del presupuesto diario
-class _DailyBudgetBreakdownModal extends StatelessWidget {
+class _DailyBudgetBreakdownModal extends StatefulWidget {
   final double remainingForMonth;
   final int daysRemaining;
   final double balance;
@@ -217,6 +218,7 @@ class _DailyBudgetBreakdownModal extends StatelessWidget {
   final double actualExpenses;
   final double totalSavings;
   final int daysInMonth;
+  final BuildContext parentContext;
 
   const _DailyBudgetBreakdownModal({
     required this.remainingForMonth,
@@ -228,7 +230,66 @@ class _DailyBudgetBreakdownModal extends StatelessWidget {
     required this.actualExpenses,
     required this.totalSavings,
     required this.daysInMonth,
+    required this.parentContext,
   });
+
+  @override
+  State<_DailyBudgetBreakdownModal> createState() => _DailyBudgetBreakdownModalState();
+}
+
+class _DailyBudgetBreakdownModalState extends State<_DailyBudgetBreakdownModal> {
+  List<FixedExpenseModel>? _fixedExpenses;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFixedExpenses();
+  }
+
+  Future<void> _loadFixedExpenses() async {
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      final expenses = await datasource.getFixedExpenses();
+      setState(() {
+        _fixedExpenses = expenses;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error al cargar gastos fijos: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleExpenseStatus(FixedExpenseModel expense, String action) async {
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      await datasource.toggleFixedExpenseStatus(
+        fixedExpenseId: expense.id,
+        action: action,
+      );
+      
+      // Recargar gastos fijos para actualizar el estado
+      await _loadFixedExpenses();
+      
+      // Recargar el dashboard del parent context
+      if (widget.parentContext.mounted) {
+        widget.parentContext.read<DashboardBloc>().add(const LoadDashboardDataEvent());
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cambiar estado: $e'),
+            backgroundColor: AppColors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

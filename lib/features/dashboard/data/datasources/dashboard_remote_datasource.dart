@@ -109,6 +109,36 @@ class IncomeSourceModel {
   }
 }
 
+/// Tracking para gastos fijos
+class FixedExpenseTracking {
+  final double budgetedAmount;
+  final double spentAmount;
+  final double remainingAmount;
+  final bool isClosed;
+  final bool isIgnored;
+  final bool isOverBudget;
+
+  FixedExpenseTracking({
+    required this.budgetedAmount,
+    required this.spentAmount,
+    required this.remainingAmount,
+    required this.isClosed,
+    required this.isIgnored,
+    required this.isOverBudget,
+  });
+
+  factory FixedExpenseTracking.fromJson(Map<String, dynamic> json) {
+    return FixedExpenseTracking(
+      budgetedAmount: double.parse(json['budgeted_amount'].toString()),
+      spentAmount: double.parse(json['spent_amount'].toString()),
+      remainingAmount: double.parse(json['remaining_amount'].toString()),
+      isClosed: json['is_closed'] as bool,
+      isIgnored: json['is_ignored'] as bool,
+      isOverBudget: json['is_over_budget'] as bool,
+    );
+  }
+}
+
 /// Modelo simple para gastos fijos (para GASTOS)
 class FixedExpenseModel {
   final int id;
@@ -117,6 +147,7 @@ class FixedExpenseModel {
   final String frequency;
   final int categoryId;
   final String categoryName;
+  final FixedExpenseTracking? tracking;
 
   FixedExpenseModel({
     required this.id,
@@ -125,9 +156,12 @@ class FixedExpenseModel {
     required this.frequency,
     required this.categoryId,
     required this.categoryName,
+    this.tracking,
   });
 
   factory FixedExpenseModel.fromJson(Map<String, dynamic> json) {
+    final trackingJson = json['tracking'] as Map<String, dynamic>?;
+    
     return FixedExpenseModel(
       id: json['id'] as int,
       name: json['name'] as String,
@@ -135,6 +169,7 @@ class FixedExpenseModel {
       frequency: json['frequency'] as String,
       categoryId: json['category_id'] as int,
       categoryName: json['category_name'] as String,
+      tracking: trackingJson != null ? FixedExpenseTracking.fromJson(trackingJson) : null,
     );
   }
 }
@@ -149,6 +184,7 @@ abstract class DashboardRemoteDataSource {
   Future<List<IncomeSourceModel>> getIncomeSources();
   Future<void> deactivateIncomeSource({required int incomeSourceId});
   Future<List<FixedExpenseModel>> getFixedExpenses();
+  Future<void> toggleFixedExpenseStatus({required int fixedExpenseId, required String action});
   Future<void> resetCategorizations();
   Future<TransactionModel> categorizeTransaction({
     required String transactionId,
@@ -561,6 +597,39 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('❌ [DATASOURCE] Stack trace: $stackTrace');
       throw UnexpectedException(
         message: 'Error inesperado al obtener gastos fijos',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> toggleFixedExpenseStatus({
+    required int fixedExpenseId,
+    required String action,
+  }) async {
+    try {
+      print('[DATASOURCE] Toggling status for fixed expense $fixedExpenseId: $action');
+      final response = await apiClient.post(
+        '/fixed-expenses/$fixedExpenseId/toggle-status/',
+        data: {'action': action},
+      );
+      print('[DATASOURCE] Status toggled successfully: ${response.statusCode}');
+    } on DioException catch (e) {
+      print('[DATASOURCE] DioException toggling status: ${e.type}');
+      print('[DATASOURCE] Error: ${e.error}');
+      print('[DATASOURCE] Response: ${e.response?.data}');
+      
+      if (e.error is Exception) {
+        throw e.error as Exception;
+      }
+      throw UnexpectedException(
+        message: 'Error al cambiar estado del gasto',
+        originalException: e,
+      );
+    } catch (e) {
+      print('[DATASOURCE] Error inesperado toggling status: $e');
+      throw UnexpectedException(
+        message: 'Error al cambiar estado del gasto',
         originalException: e,
       );
     }
