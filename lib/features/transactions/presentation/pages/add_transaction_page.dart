@@ -534,26 +534,28 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             ),
                           ),
                           items: _categories.map((category) {
+                            final categoryColor = category.color != null && category.color!.isNotEmpty
+                                ? Color(int.parse('0xFF${category.color!.substring(1)}'))
+                                : AppColors.gray400;
+                            
                             return DropdownMenuItem(
                               value: category,
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: category.color != null && category.color!.isNotEmpty
-                                          ? Color(int.parse('0xFF${category.color!.substring(1)}'))
-                                          : AppColors.gray400,
+                                      color: categoryColor,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Flexible(
+                                  Expanded(
                                     child: Text(
                                       category.displayName,
                                       overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                   ),
                                 ],
