@@ -184,8 +184,10 @@ abstract class DashboardRemoteDataSource {
     required double amount,
     required String description,
     required DateTime date,
+    String currency = 'GTQ',
     int? categoryId,
     int? incomeSourceId,
+    int? fixedExpenseId,
   });
   
   /// Actualizar una transacción existente
@@ -849,11 +851,13 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     required double amount,
     required String description,
     required DateTime date,
+    String currency = 'GTQ',
     int? categoryId,
     int? incomeSourceId,
+    int? fixedExpenseId,
   }) async {
     try {
-      print('🔵 [DATASOURCE] Creando transacción: $type, $amount, $description');
+      print('🔵 [DATASOURCE] Creando transacción: $type, $amount $currency, $description');
       
       final data = <String, dynamic>{
         'transaction_type': type == 'expense' ? 'expense' : 'income',
@@ -864,6 +868,12 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         'status': 'PENDING_CATEGORY',
       };
 
+      // Agregar moneda si no es GTQ (el backend hará la conversión)
+      if (currency != 'GTQ') {
+        data['original_currency'] = currency;
+        data['original_amount'] = amount.toString();
+      }
+
       if (categoryId != null) {
         data['category_id'] = categoryId;
         data['status'] = 'COMPLETED';
@@ -872,6 +882,14 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       if (incomeSourceId != null) {
         data['income_source_id'] = incomeSourceId;
         data['status'] = 'COMPLETED';
+      }
+
+      if (fixedExpenseId != null) {
+        data['fixed_expense_id'] = fixedExpenseId;
+        // Si hay fixed expense, la transacción está completamente categorizada
+        if (categoryId != null) {
+          data['status'] = 'COMPLETED';
+        }
       }
 
       final response = await apiClient.post(

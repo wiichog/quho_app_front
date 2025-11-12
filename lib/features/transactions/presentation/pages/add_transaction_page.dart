@@ -23,17 +23,23 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   
   String _selectedType = 'expense'; // 'expense' | 'income'
   DateTime _selectedDate = DateTime.now();
+  String _selectedCurrency = 'GTQ';
   bool _isSubmitting = false;
   bool _isLoadingCategories = false;
   bool _isLoadingIncomeSources = false;
+  bool _isLoadingFixedExpenses = false;
 
   // Datos cargados
   List<CategoryModel> _categories = [];
   List<IncomeSourceModel> _incomeSources = [];
+  List<FixedExpenseModel> _fixedExpenses = [];
   
   // Selecciones
   CategoryModel? _selectedCategory;
   IncomeSourceModel? _selectedIncomeSource;
+  FixedExpenseModel? _selectedFixedExpense;
+
+  final List<String> _currencies = ['GTQ', 'USD', 'EUR'];
 
   @override
   void initState() {
@@ -41,6 +47,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate);
     _loadCategories();
     _loadIncomeSources();
+    _loadFixedExpenses();
   }
 
   @override
@@ -113,6 +120,37 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
+  Future<void> _loadFixedExpenses() async {
+    setState(() {
+      _isLoadingFixedExpenses = true;
+    });
+
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      final fixedExpenses = await datasource.getFixedExpenses();
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _fixedExpenses = fixedExpenses;
+        _isLoadingFixedExpenses = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoadingFixedExpenses = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar gastos fijos: $e'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -162,8 +200,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         amount: amount,
         description: description,
         date: _selectedDate,
+        currency: _selectedCurrency,
         categoryId: _selectedCategory?.id,
         incomeSourceId: _selectedIncomeSource?.id,
+        fixedExpenseId: _selectedFixedExpense?.id,
       );
       
       if (!mounted) return;
@@ -274,6 +314,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               setState(() {
                                 _selectedType = 'income';
                                 _selectedCategory = null; // Limpiar selección de categoría
+                                _selectedFixedExpense = null; // Limpiar selección de gasto fijo
                               });
                             },
                           ),
@@ -340,7 +381,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
               AppSpacing.verticalMd,
 
-              // Monto
+              // Monto y Moneda
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.white,
@@ -358,50 +399,113 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       ),
                     ),
                     AppSpacing.verticalSm,
-                    TextFormField(
-                      controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _amountController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                            ],
+                            decoration: InputDecoration(
+                              hintText: '0.00',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            style: AppTextStyles.h3().copyWith(
+                              color: _selectedType == 'expense' ? AppColors.red : AppColors.green,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Ingresa un monto';
+                              }
+                              final amount = double.tryParse(value);
+                              if (amount == null || amount <= 0) {
+                                return 'Monto inválido';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedCurrency,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            items: _currencies.map((currency) {
+                              return DropdownMenuItem(
+                                value: currency,
+                                child: Text(currency),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedCurrency = value;
+                                });
+                              }
+                            },
+                          ),
+                        ),
                       ],
-                      decoration: InputDecoration(
-                        hintText: '0.00',
-                        prefixText: 'Q ',
-                        prefixStyle: AppTextStyles.bodyLarge().copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.gray900,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.teal, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      style: AppTextStyles.h3().copyWith(
-                        color: _selectedType == 'expense' ? AppColors.red : AppColors.green,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Ingresa un monto';
-                        }
-                        final amount = double.tryParse(value);
-                        if (amount == null || amount <= 0) {
-                          return 'Monto inválido';
-                        }
-                        return null;
-                      },
                     ),
+                    if (_selectedCurrency != 'GTQ')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.blue.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: AppColors.blue, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Se convertirá automáticamente a GTQ según la tasa de cambio actual',
+                                  style: AppTextStyles.caption(color: AppColors.blue),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -456,8 +560,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
               AppSpacing.verticalMd,
 
-              // Selector de Categoría (solo para gastos) o Fuente de Ingreso (solo para ingresos)
-              if (_selectedType == 'expense')
+              // Selector de Categoría y Rubro de Presupuesto (para gastos) o Fuente de Ingreso (para ingresos)
+              if (_selectedType == 'expense') ...[
+                // Selector de Categoría
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.white,
@@ -572,8 +677,124 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         ),
                     ],
                   ),
-                )
-              else
+                ),
+
+                AppSpacing.verticalMd,
+
+                // Selector de Rubro de Presupuesto (Fixed Expense)
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  padding: AppSpacing.paddingMd,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Rubro de Presupuesto',
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gray700,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(Opcional)',
+                            style: AppTextStyles.caption(color: AppColors.gray500),
+                          ),
+                        ],
+                      ),
+                      AppSpacing.verticalSm,
+                      if (_isLoadingFixedExpenses)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_fixedExpenses.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: AppColors.gray500),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'No hay rubros de presupuesto disponibles',
+                                  style: AppTextStyles.bodySmall(color: AppColors.gray600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        DropdownButtonFormField<FixedExpenseModel>(
+                          value: _selectedFixedExpense,
+                          decoration: InputDecoration(
+                            hintText: 'Selecciona un rubro de presupuesto',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.gray300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.gray300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppColors.teal, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          items: _fixedExpenses.map((expense) {
+                            return DropdownMenuItem(
+                              value: expense,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    expense.name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    '${expense.categoryName} - ${Formatters.currency(expense.amount)}',
+                                    style: AppTextStyles.caption(color: AppColors.gray600),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedFixedExpense = value;
+                              // Auto-seleccionar la categoría del fixed expense
+                              if (value != null) {
+                                _selectedCategory = _categories.firstWhere(
+                                  (cat) => cat.id == value.categoryId,
+                                  orElse: () => _categories.first,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                // Selector de Fuente de Ingreso
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.white,
@@ -678,6 +899,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     ],
                   ),
                 ),
+              ],
 
               AppSpacing.verticalXl,
 
@@ -729,13 +951,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        _selectedType == 'expense'
-                            ? (_selectedCategory == null
-                                ? 'La transacción quedará como "Sin categorizar" hasta que la categorices manualmente.'
-                                : 'La transacción será agregada a la categoría "${_selectedCategory!.displayName}".')
-                            : (_selectedIncomeSource == null
-                                ? 'El ingreso quedará como "Sin categorizar" hasta que lo categorices manualmente.'
-                                : 'El ingreso será asociado a "${_selectedIncomeSource!.name}".'),
+                        _buildInfoMessage(),
                         style: AppTextStyles.caption(color: AppColors.blue).copyWith(
                           fontSize: 12,
                         ),
@@ -749,6 +965,24 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         ),
       ),
     );
+  }
+
+  String _buildInfoMessage() {
+    if (_selectedType == 'expense') {
+      if (_selectedFixedExpense != null) {
+        return 'El gasto será asociado a "${_selectedFixedExpense!.name}" en tu presupuesto.';
+      } else if (_selectedCategory != null) {
+        return 'El gasto será agregado a la categoría "${_selectedCategory!.displayName}".';
+      } else {
+        return 'El gasto quedará como "Sin categorizar" hasta que lo categorices manualmente.';
+      }
+    } else {
+      if (_selectedIncomeSource != null) {
+        return 'El ingreso será asociado a "${_selectedIncomeSource!.name}".';
+      } else {
+        return 'El ingreso quedará como "Sin categorizar" hasta que lo categorices manualmente.';
+      }
+    }
   }
 }
 
