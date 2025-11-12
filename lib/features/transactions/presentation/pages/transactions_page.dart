@@ -115,15 +115,19 @@ class _TransactionsPageState extends State<TransactionsPage> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
-        final bloc = getIt<TransactionsBloc>()
-          ..add(const LoadTransactionsEvent(page: 1, isRefresh: true));
+        final bloc = getIt<TransactionsBloc>();
         
-        // Si hay un filtro inicial, aplicarlo después de cargar
+        // Si hay un filtro inicial, cargar directamente con ese filtro
         if (widget.initialCategoryFilter != null) {
-          // Usar Future.delayed para dar tiempo a que se carguen las transacciones primero
-          Future.delayed(const Duration(milliseconds: 300), () {
-            bloc.add(ApplyFiltersEvent(category: widget.initialCategoryFilter));
-          });
+          print('[TransactionsPage] Cargando con filtro inicial: ${widget.initialCategoryFilter}');
+          bloc.add(LoadTransactionsEvent(
+            page: 1,
+            isRefresh: true,
+            category: widget.initialCategoryFilter,
+          ));
+        } else {
+          // Cargar todas las transacciones sin filtro
+          bloc.add(const LoadTransactionsEvent(page: 1, isRefresh: true));
         }
         
         return bloc;
