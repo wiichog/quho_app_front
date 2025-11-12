@@ -106,9 +106,20 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
     });
 
     try {
-      // Aquí iría la llamada al API para actualizar la transacción
-      // Por ahora, simularemos el éxito
-      await Future.delayed(const Duration(milliseconds: 500));
+      final datasource = getIt<DashboardRemoteDataSource>();
+      
+      // Preparar los datos actualizados
+      final newAmount = double.tryParse(_amountController.text);
+      final newDescription = _descriptionController.text.trim();
+      
+      // Actualizar la transacción en el backend
+      await datasource.updateTransaction(
+        transactionId: widget.transaction.id,
+        type: _selectedType != widget.transaction.type ? _selectedType : null,
+        amount: newAmount != widget.transaction.amount.abs() ? newAmount : null,
+        description: newDescription != widget.transaction.description ? newDescription : null,
+        date: _selectedDate != widget.transaction.date ? _selectedDate : null,
+      );
 
       if (!mounted) return;
 

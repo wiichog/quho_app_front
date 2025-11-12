@@ -174,6 +174,30 @@ abstract class DashboardRemoteDataSource {
   });
   Future<List<CategoryBudgetTrackingModel>> getCategoryBudgetTrackings({String? month});
   Future<CategoryBudgetTrackingModel> toggleCategoryTrackingClosed({required int trackingId});
+  
+  /// Ajustar balance manualmente
+  Future<Map<String, dynamic>> adjustBalance({required double newBalance});
+  
+  /// Crear nueva transacción manual
+  Future<TransactionModel> createTransaction({
+    required String type, // 'income' o 'expense'
+    required double amount,
+    required String description,
+    required DateTime date,
+    int? categoryId,
+    int? incomeSourceId,
+  });
+  
+  /// Actualizar una transacción existente
+  Future<TransactionModel> updateTransaction({
+    required String transactionId,
+    String? type,
+    double? amount,
+    String? description,
+    DateTime? date,
+    int? categoryId,
+    int? incomeSourceId,
+  });
 }
 
 /// Implementación del datasource remoto del Dashboard
@@ -779,6 +803,167 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('❌ [DATASOURCE] Stack trace: $stackTrace');
       throw UnexpectedException(
         message: 'Error inesperado al cambiar estado',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> adjustBalance({required double newBalance}) async {
+    try {
+      print('🔵 [DATASOURCE] Ajustando balance a: $newBalance');
+      
+      final response = await apiClient.post(
+        '/transactions/adjust-balance/',
+        data: {
+          'expected_balance': newBalance,
+        },
+      );
+      
+      print('✅ [DATASOURCE] Balance ajustado exitosamente');
+      print('📊 [DATASOURCE] Respuesta: ${response.data}');
+      
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException: ${e.type}');
+      print('❌ [DATASOURCE] Error: ${e.error}');
+      print('❌ [DATASOURCE] Response: ${e.response?.data}');
+      
+      throw UnexpectedException(
+        message: 'Error al ajustar balance',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al ajustar balance',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<TransactionModel> createTransaction({
+    required String type,
+    required double amount,
+    required String description,
+    required DateTime date,
+    int? categoryId,
+    int? incomeSourceId,
+  }) async {
+    try {
+      print('🔵 [DATASOURCE] Creando transacción: $type, $amount, $description');
+      
+      final data = {
+        'transaction_type': type == 'expense' ? 'expense' : 'income',
+        'amount': amount.toString(),
+        'description': description,
+        'date': date.toIso8601String().split('T')[0], // YYYY-MM-DD
+        'source': 'MANUAL',
+        'status': 'PENDING_CATEGORY',
+      };
+
+      if (categoryId != null) {
+        data['category_id'] = categoryId;
+        data['status'] = 'COMPLETED';
+      }
+
+      if (incomeSourceId != null) {
+        data['income_source_id'] = incomeSourceId;
+        data['status'] = 'COMPLETED';
+      }
+
+      final response = await apiClient.post(
+        '/transactions/',
+        data: data,
+      );
+      
+      print('✅ [DATASOURCE] Transacción creada exitosamente');
+      print('📊 [DATASOURCE] Transacción ID: ${response.data['id']}');
+      
+      return TransactionModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException: ${e.type}');
+      print('❌ [DATASOURCE] Error: ${e.error}');
+      print('❌ [DATASOURCE] Response: ${e.response?.data}');
+      
+      throw UnexpectedException(
+        message: 'Error al crear transacción',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al crear transacción',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<TransactionModel> updateTransaction({
+    required String transactionId,
+    String? type,
+    double? amount,
+    String? description,
+    DateTime? date,
+    int? categoryId,
+    int? incomeSourceId,
+  }) async {
+    try {
+      print('🔵 [DATASOURCE] Actualizando transacción $transactionId');
+      
+      final data = <String, dynamic>{};
+
+      if (type != null) {
+        data['transaction_type'] = type == 'expense' ? 'expense' : 'income';
+      }
+
+      if (amount != null) {
+        data['amount'] = amount.toString();
+      }
+
+      if (description != null) {
+        data['description'] = description;
+      }
+
+      if (date != null) {
+        data['date'] = date.toIso8601String().split('T')[0]; // YYYY-MM-DD
+      }
+
+      if (categoryId != null) {
+        data['category_id'] = categoryId;
+      }
+
+      if (incomeSourceId != null) {
+        data['income_source_id'] = incomeSourceId;
+      }
+
+      final response = await apiClient.patch(
+        '/transactions/$transactionId/',
+        data: data,
+      );
+      
+      print('✅ [DATASOURCE] Transacción actualizada exitosamente');
+      print('📊 [DATASOURCE] Transacción ID: ${response.data['id']}');
+      
+      return TransactionModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('❌ [DATASOURCE] DioException: ${e.type}');
+      print('❌ [DATASOURCE] Error: ${e.error}');
+      print('❌ [DATASOURCE] Response: ${e.response?.data}');
+      
+      throw UnexpectedException(
+        message: 'Error al actualizar transacción',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('❌ [DATASOURCE] Exception inesperada: $e');
+      print('❌ [DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al actualizar transacción',
         originalException: e,
       );
     }

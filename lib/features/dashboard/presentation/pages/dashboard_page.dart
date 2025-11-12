@@ -1495,8 +1495,9 @@ class _DashboardContent extends StatelessWidget {
                       height: firstRowCardHeight,
                     child: EditableBalanceCard(
                       balance: budget.balance,
-                      onEdit: () {
-                        // TODO: Implementar edición
+                      onBalanceAdjusted: () {
+                        // Recargar el dashboard después de ajustar el balance
+                        context.read<DashboardBloc>().add(const LoadDashboardDataEvent());
                       },
                       ),
                     ),

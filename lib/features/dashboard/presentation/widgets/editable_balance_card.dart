@@ -75,9 +75,9 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
 
     try {
       final datasource = getIt<DashboardRemoteDataSource>();
-      // Aquí necesitarías implementar el método adjustBalance en el datasource
-      // Por ahora simularemos la llamada
-      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Llamada real al backend
+      final result = await datasource.adjustBalance(newBalance: newBalance);
 
       if (!mounted) return;
 
@@ -86,13 +86,19 @@ class _EditableBalanceCardState extends State<EditableBalanceCard> {
         _isSaving = false;
       });
 
+      // Mostrar información del ajuste
+      final adjustmentType = result['transaction']?['transaction_type'] ?? 'ajuste';
+      final adjustmentAmount = result['transaction']?['amount'] ?? newBalance;
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Balance ajustado exitosamente a ${Formatters.currency(newBalance)}',
+            'Balance ajustado exitosamente a ${Formatters.currency(newBalance)}\n'
+            'Se creó un ${adjustmentType} de ${Formatters.currency(double.parse(adjustmentAmount.toString()))}',
           ),
           backgroundColor: AppColors.green,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
         ),
       );
 

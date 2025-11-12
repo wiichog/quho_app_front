@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quho_app/core/config/app_config.dart';
+import 'package:quho_app/core/utils/formatters.dart';
 import 'package:quho_app/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
 import 'package:quho_app/features/dashboard/domain/entities/transaction.dart';
 import 'package:quho_app/shared/design_system/design_system.dart';
@@ -83,27 +84,39 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     try {
       final datasource = getIt<DashboardRemoteDataSource>();
       
-      // Crear la transacción a través del datasource
-      // Nota: Aquí necesitarías implementar un método createTransaction en el datasource
-      // Por ahora, mostraré un mensaje de éxito simulado
+      // Obtener los valores del formulario
+      final amount = double.parse(_amountController.text);
+      final description = _descriptionController.text;
       
-      await Future.delayed(const Duration(seconds: 1)); // Simular llamada API
+      // Crear la transacción a través del datasource
+      final transaction = await datasource.createTransaction(
+        type: _selectedType,
+        amount: amount,
+        description: description,
+        date: _selectedDate,
+        categoryId: _selectedCategory?.id,
+        incomeSourceId: _selectedIncomeSource?.id,
+      );
       
       if (!mounted) return;
       
-      // Mostrar mensaje de éxito
+      // Mostrar mensaje de éxito con información de la transacción creada
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Transacción agregada exitosamente'),
+          content: Text(
+            'Transacción agregada exitosamente\n'
+            '${transaction.type == 'expense' ? 'Gasto' : 'Ingreso'}: ${Formatters.currency(transaction.amount)}'
+          ),
           backgroundColor: AppColors.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 3),
         ),
       );
       
       // Regresar a la página anterior
       if (mounted) {
-        context.pop();
+        context.pop(true); // Retornar true para indicar que se agregó la transacción
       }
     } catch (e) {
       if (!mounted) return;
