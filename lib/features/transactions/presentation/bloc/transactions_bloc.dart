@@ -22,7 +22,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     LoadTransactionsEvent event,
     Emitter<TransactionsState> emit,
   ) async {
-    print('🔵 [BLOC] Cargando transacciones');
+    print('[BLOC] Cargando transacciones');
 
     // Si es refresh, mostrar loading
     if (event.isRefresh) {
@@ -48,11 +48,11 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
 
     result.fold(
       (failure) {
-        print('❌ [BLOC] Error al cargar transacciones: ${failure.message}');
+        print('[BLOC] Error al cargar transacciones: ${failure.message}');
         emit(TransactionsError(message: failure.message));
       },
       (paginatedTransactions) {
-        print('✅ [BLOC] Transacciones cargadas: ${paginatedTransactions.transactions.length}');
+        print('[BLOC] Transacciones cargadas: ${paginatedTransactions.transactions.length}');
 
         // Si es la primera página o refresh, reemplazar toda la lista
         // Si es paginación, agregar a la lista existente
@@ -95,22 +95,52 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     ApplyFiltersEvent event,
     Emitter<TransactionsState> emit,
   ) async {
-    print('🔵 [BLOC] Aplicando filtros');
-    add(LoadTransactionsEvent(
+    print('[BLOC] Aplicando filtros: type=${event.type}, category=${event.category}, startDate=${event.startDate}, endDate=${event.endDate}');
+    
+    // Emitir estado de carga inmediatamente para que la UI se actualice
+    emit(const TransactionsLoading());
+    
+    // Luego cargar las transacciones con los nuevos filtros
+    final params = GetTransactionsParams(
       page: 1,
       type: event.type,
       category: event.category,
       startDate: event.startDate,
       endDate: event.endDate,
-      isRefresh: true,
-    ));
+      search: state is TransactionsLoaded ? (state as TransactionsLoaded).currentSearch : null,
+    );
+
+    final result = await getTransactionsUseCase(params);
+
+    result.fold(
+      (failure) {
+        print('[BLOC] Error al aplicar filtros: ${failure.message}');
+        emit(TransactionsError(message: failure.message));
+      },
+      (paginatedTransactions) {
+        print('[BLOC] Filtros aplicados correctamente. Transacciones: ${paginatedTransactions.transactions.length}');
+
+        emit(TransactionsLoaded(
+          transactions: paginatedTransactions.transactions,
+          totalCount: paginatedTransactions.count,
+          hasMore: paginatedTransactions.transactions.length < paginatedTransactions.count,
+          currentPage: 1,
+          currentType: event.type,
+          currentCategory: event.category,
+          currentStartDate: event.startDate,
+          currentEndDate: event.endDate,
+          currentSearch: state is TransactionsLoaded ? (state as TransactionsLoaded).currentSearch : null,
+          isLoadingMore: false,
+        ));
+      },
+    );
   }
 
   Future<void> _onSearchTransactions(
     SearchTransactionsEvent event,
     Emitter<TransactionsState> emit,
   ) async {
-    print('🔵 [BLOC] Buscando transacciones: ${event.query}');
+    print('[BLOC] Buscando transacciones: ${event.query}');
 
     // Mantener filtros actuales si existen
     String? currentType;
@@ -141,7 +171,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     ClearFiltersEvent event,
     Emitter<TransactionsState> emit,
   ) async {
-    print('🔵 [BLOC] Limpiando filtros');
+    print('[BLOC] Limpiando filtros');
     add(const LoadTransactionsEvent(
       page: 1,
       isRefresh: true,
@@ -157,7 +187,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     final currentState = state as TransactionsLoaded;
     if (!currentState.hasMore || currentState.isLoadingMore) return;
 
-    print('🔵 [BLOC] Cargando más transacciones (página ${currentState.currentPage + 1})');
+    print('[BLOC] Cargando mas transacciones (pagina ${currentState.currentPage + 1})');
 
     add(LoadTransactionsEvent(
       page: currentState.currentPage + 1,

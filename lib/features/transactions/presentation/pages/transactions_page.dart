@@ -164,6 +164,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
           ],
         ),
         body: BlocBuilder<TransactionsBloc, TransactionsState>(
+          buildWhen: (previous, current) {
+            // Reconstruir siempre que cambie el estado
+            return previous != current;
+          },
           builder: (blocBuilderContext, state) {
             if (state is TransactionsLoading) {
               return const Center(
