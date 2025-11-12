@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quho_app/core/services/social_auth_service.dart';
 import 'package:quho_app/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:quho_app/features/auth/domain/usecases/login_usecase.dart';
 import 'package:quho_app/features/auth/domain/usecases/logout_usecase.dart';
@@ -16,6 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GetCurrentUserUseCase getCurrentUserUseCase;
   final LogoutUseCase logoutUseCase;
   final AuthRepository authRepository;
+  final SocialAuthService socialAuthService;
 
   AuthBloc({
     required this.loginUseCase,
@@ -24,6 +26,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.getCurrentUserUseCase,
     required this.logoutUseCase,
     required this.authRepository,
+    required this.socialAuthService,
   }) : super(const AuthInitial()) {
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
     on<LoginEvent>(_onLogin);
@@ -32,6 +35,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResendVerificationCodeEvent>(_onResendVerificationCode);
     on<RequestPasswordResetEvent>(_onRequestPasswordReset);
     on<LogoutEvent>(_onLogout);
+    on<GoogleSignInEvent>(_onGoogleSignIn);
+    on<AppleSignInEvent>(_onAppleSignIn);
+    on<FacebookSignInEvent>(_onFacebookSignIn);
   }
 
   /// Verificar si hay sesión activa
@@ -176,10 +182,105 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await logoutUseCase();
 
+    // Cerrar todas las sesiones sociales
+    await socialAuthService.signOutAll();
+
     result.fold(
       (failure) => emit(AuthError(message: failure.message)),
       (_) => emit(const Unauthenticated()),
     );
+  }
+
+  /// Google Sign In
+  Future<void> _onGoogleSignIn(
+    GoogleSignInEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    try {
+      final socialAuthResult = await socialAuthService.signInWithGoogle();
+
+      if (socialAuthResult == null) {
+        emit(const Unauthenticated());
+        return;
+      }
+
+      final result = await authRepository.socialAuth(
+        provider: 'google-oauth2',
+        accessToken: socialAuthResult.accessToken ?? '',
+        idToken: socialAuthResult.idToken,
+      );
+
+      result.fold(
+        (failure) => emit(AuthError(message: failure.message)),
+        (authResponse) => emit(Authenticated(user: authResponse.user)),
+      );
+    } catch (e) {
+      print('❌ [AUTH_BLOC] Error en Google Sign In: $e');
+      emit(const AuthError(message: 'Error al iniciar sesión con Google'));
+    }
+  }
+
+  /// Apple Sign In
+  Future<void> _onAppleSignIn(
+    AppleSignInEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    try {
+      final socialAuthResult = await socialAuthService.signInWithApple();
+
+      if (socialAuthResult == null) {
+        emit(const Unauthenticated());
+        return;
+      }
+
+      final result = await authRepository.socialAuth(
+        provider: 'apple-id',
+        accessToken: socialAuthResult.idToken ?? '',
+        authorizationCode: socialAuthResult.authorizationCode,
+      );
+
+      result.fold(
+        (failure) => emit(AuthError(message: failure.message)),
+        (authResponse) => emit(Authenticated(user: authResponse.user)),
+      );
+    } catch (e) {
+      print('❌ [AUTH_BLOC] Error en Apple Sign In: $e');
+      emit(const AuthError(message: 'Error al iniciar sesión con Apple'));
+    }
+  }
+
+  /// Facebook Sign In
+  Future<void> _onFacebookSignIn(
+    FacebookSignInEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    try {
+      final socialAuthResult = await socialAuthService.signInWithFacebook();
+
+      if (socialAuthResult == null) {
+        emit(const Unauthenticated());
+        return;
+      }
+
+      final result = await authRepository.socialAuth(
+        provider: 'facebook',
+        accessToken: socialAuthResult.accessToken ?? '',
+      );
+
+      result.fold(
+        (failure) => emit(AuthError(message: failure.message)),
+        (authResponse) => emit(Authenticated(user: authResponse.user)),
+      );
+    } catch (e) {
+      print('❌ [AUTH_BLOC] Error en Facebook Sign In: $e');
+      emit(const AuthError(message: 'Error al iniciar sesión con Facebook'));
+    }
   }
 }
 

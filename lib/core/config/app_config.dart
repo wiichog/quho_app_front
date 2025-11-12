@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:quho_app/core/network/api_client.dart';
+import 'package:quho_app/core/services/social_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quho_app/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:quho_app/features/auth/data/datasources/auth_remote_datasource.dart';
@@ -58,6 +59,9 @@ Future<void> setupDependencies() async {
   // API Client
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
 
+  // Social Auth Service
+  getIt.registerLazySingleton<SocialAuthService>(() => SocialAuthService());
+
   // ========== AUTH - DATA SOURCES ==========
   getIt.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(apiClient: getIt()),
@@ -94,6 +98,7 @@ Future<void> setupDependencies() async {
       getCurrentUserUseCase: getIt(),
       logoutUseCase: getIt(),
       authRepository: getIt(),
+      socialAuthService: getIt(),
     ),
   );
 

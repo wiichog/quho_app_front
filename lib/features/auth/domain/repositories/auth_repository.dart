@@ -58,6 +58,14 @@ abstract class AuthRepository {
   /// Logout
   Future<Either<Failure, void>> logout();
 
+  /// Social Auth (Google, Apple, Facebook)
+  Future<Either<Failure, AuthResponse>> socialAuth({
+    required String provider,
+    required String accessToken,
+    String? idToken,
+    String? authorizationCode,
+  });
+
   /// Verificar si hay una sesión activa
   Future<bool> hasActiveSession();
 

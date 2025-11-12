@@ -55,13 +55,26 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _handleSocialRegister(String provider) {
-    // TODO: Implementar lógica de social auth con el backend
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Registro con $provider próximamente'),
-        backgroundColor: AppColors.blue,
-      ),
-    );
+    final bloc = context.read<AuthBloc>();
+    
+    switch (provider.toLowerCase()) {
+      case 'google':
+        bloc.add(const GoogleSignInEvent());
+        break;
+      case 'apple':
+        bloc.add(const AppleSignInEvent());
+        break;
+      case 'facebook':
+        bloc.add(const FacebookSignInEvent());
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Proveedor $provider no soportado'),
+            backgroundColor: AppColors.red,
+          ),
+        );
+    }
   }
 
   @override

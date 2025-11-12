@@ -294,6 +294,46 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, AuthResponse>> socialAuth({
+    required String provider,
+    required String accessToken,
+    String? idToken,
+    String? authorizationCode,
+  }) async {
+    try {
+      final authResponse = await remoteDataSource.socialAuth(
+        provider: provider,
+        accessToken: accessToken,
+        idToken: idToken,
+        authorizationCode: authorizationCode,
+      );
+
+      // Guardar tokens
+      await localDataSource.saveTokens(
+        accessToken: authResponse.access,
+        refreshToken: authResponse.refresh,
+      );
+
+      // Guardar usuario
+      await localDataSource.saveUser(authResponse.user);
+
+      return Right(authResponse.toEntity());
+    } on UnauthorizedException catch (e) {
+      return Left(UnauthorizedFailure(e.message));
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on TimeoutException catch (e) {
+      return Left(TimeoutFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(UnexpectedFailure('Error en autenticación social'));
+    }
+  }
+
+  @override
   Future<bool> hasActiveSession() async {
     try {
       return await localDataSource.hasActiveSession();
