@@ -929,13 +929,14 @@ class _DashboardContent extends StatelessWidget {
   }
 
   Future<void> _showNewIncomeSourceForm(BuildContext context, Transaction transaction) async {
+    final rootContext = context; // Guardar el contexto raíz que tiene acceso al provider
     await showDialog(
       context: context,
-      builder: (context) => NewIncomeSourceModal(
+      builder: (dialogContext) => NewIncomeSourceModal(
         transactionAmount: transaction.amount,
         onSubmit: (name, amount, frequency, isNetAmount, taxContext) async {
           await _categorizeIncomeWithNewSource(
-            context,
+            rootContext, // Usar el contexto raíz en lugar del contexto del diálogo
             transaction.id,
             name,
             amount,
@@ -963,6 +964,7 @@ class _DashboardContent extends StatelessWidget {
     
     var loaderShownNew = false;
     final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final rootContext = context; // Guardar el contexto raíz que tiene acceso al provider
     // Mostrar loading dialog
       if (context.mounted) {
       loaderShownNew = true;
@@ -1027,13 +1029,14 @@ class _DashboardContent extends StatelessWidget {
         }
       }
 
-      // Recargar dashboard en background (sin esperar) - solo si el context tiene acceso al bloc
-      if (context.mounted) {
+      // Recargar dashboard en background (sin esperar) - usar rootContext que tiene acceso al provider
+      if (rootContext.mounted) {
         try {
-          final bloc = context.read<DashboardBloc>();
+          final bloc = rootContext.read<DashboardBloc>();
           print('🔄 Recargando dashboard en background...');
           bloc.add(const LoadDashboardDataEvent());
         } catch (e) {
+          // Si no podemos acceder al bloc, no es crítico - el dashboard se recargará cuando el usuario regrese
           print('⚠️ [NEW_INCOME] No se pudo acceder al DashboardBloc: $e');
           print('⚠️ [NEW_INCOME] El dashboard se recargará cuando el usuario regrese a esta página');
         }
