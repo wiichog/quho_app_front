@@ -452,43 +452,27 @@ class _EditTransactionBottomSheetState extends State<EditTransactionBottomSheet>
                       flex: 2,
                       child: TextFormField(
                         controller: _amountController,
-                        enabled: !_isSubmitting, // Solo deshabilitar cuando se está guardando
+                        readOnly: true, // Bloqueado porque las transacciones están automatizadas
+                        enabled: false, // Deshabilitado para que no se pueda editar
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                        ],
                         decoration: InputDecoration(
                           prefixText: _selectedCurrency == 'GTQ' ? 'Q ' : '\$ ',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppColors.gray300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppColors.teal, width: 2),
-                          ),
                           disabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(color: AppColors.gray300),
                           ),
+                          filled: true,
+                          fillColor: AppColors.gray100, // Fondo gris para indicar que está bloqueado
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
                           ),
+                          helperText: 'El monto no se puede editar (transacción automatizada)',
+                          helperStyle: AppTextStyles.caption(color: AppColors.gray600),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Ingresa un monto';
-                          }
-                          final amount = double.tryParse(value);
-                          if (amount == null || amount <= 0) {
-                            return 'Monto inválido';
-                          }
-                          return null;
-                        },
                       ),
                     ),
                     const SizedBox(width: 12),
