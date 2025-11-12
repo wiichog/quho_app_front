@@ -14,7 +14,12 @@ import 'package:quho_app/shared/design_system/design_system.dart';
 
 /// Página de transacciones con filtros y búsqueda
 class TransactionsPage extends StatefulWidget {
-  const TransactionsPage({super.key});
+  final String? initialCategoryFilter;
+  
+  const TransactionsPage({
+    super.key,
+    this.initialCategoryFilter,
+  });
 
   @override
   State<TransactionsPage> createState() => _TransactionsPageState();
@@ -24,11 +29,26 @@ class _TransactionsPageState extends State<TransactionsPage> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   bool _isSearching = false;
+  bool _hasAppliedInitialFilter = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    // Aplicar filtro inicial si se proporcionó
+    if (widget.initialCategoryFilter != null && !_hasAppliedInitialFilter) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<TransactionsBloc>().add(
+            ApplyFiltersEvent(
+              category: widget.initialCategoryFilter,
+            ),
+          );
+          _hasAppliedInitialFilter = true;
+        }
+      });
+    }
   }
   
   void _onScroll() {
@@ -131,9 +151,30 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   ),
                   onChanged: (query) => _onSearchChanged(query, blocContext),
                 )
-              : Text(
-                  'Transacciones',
-                  style: AppTextStyles.h4().copyWith(color: AppColors.gray900),
+              : BlocBuilder<TransactionsBloc, TransactionsState>(
+                  builder: (context, state) {
+                    String title = 'Transacciones';
+                    if (state is TransactionsLoaded && state.currentCategory != null) {
+                      // Mostrar nombre de categoría si está filtrado
+                      title = 'Transacciones';
+                      // Agregar subtítulo con el filtro activo
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTextStyles.h4().copyWith(color: AppColors.gray900),
+                        ),
+                        if (state is TransactionsLoaded && state.currentCategory != null)
+                          Text(
+                            'Filtrado por categoría',
+                            style: AppTextStyles.caption(color: AppColors.gray600),
+                          ),
+                      ],
+                    );
+                  },
                 ),
           actions: [
             if (_isSearching)

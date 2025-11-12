@@ -114,7 +114,11 @@ class AppRouter {
           GoRoute(
             path: 'transactions',
             name: 'transactions',
-            builder: (context, state) => const TransactionsPage(),
+            builder: (context, state) {
+              // Leer parámetros de query para filtros pre-aplicados
+              final categorySlug = state.uri.queryParameters['category'];
+              return TransactionsPage(initialCategoryFilter: categorySlug);
+            },
           ),
           GoRoute(
             path: 'transaction/:id',

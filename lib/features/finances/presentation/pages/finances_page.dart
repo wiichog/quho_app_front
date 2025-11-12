@@ -531,15 +531,21 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final percentage = category.percentageUsed.clamp(0, 150);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
+    return InkWell(
+      onTap: () {
+        // Navegar a transacciones con filtro de categoría
+        context.push('/home/transactions?category=${category.slug}');
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.gray200),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -594,6 +600,13 @@ class _CategoryCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              const SizedBox(width: 8),
+              // Indicador de que es clickeable
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.gray400,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -674,6 +687,7 @@ class _CategoryCard extends StatelessWidget {
             ),
           ],
         ],
+        ),
       ),
     );
   }
