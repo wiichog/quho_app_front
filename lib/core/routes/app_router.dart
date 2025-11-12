@@ -339,18 +339,6 @@ class TransactionDetailPage extends StatelessWidget {
   }
 }
 
-class AddTransactionPage extends StatelessWidget {
-  const AddTransactionPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add Transaction')),
-      body: const Center(child: Text('Add Transaction Page - TODO')),
-    );
-  }
-}
-
 class BudgetsPage extends StatelessWidget {
   const BudgetsPage({super.key});
 
