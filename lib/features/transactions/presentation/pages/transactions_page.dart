@@ -29,6 +29,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   bool _isSearching = false;
+  TransactionsBloc? _bloc; // Referencia al bloc
 
   @override
   void initState() {
@@ -39,10 +40,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
       // Cuando el usuario está al 80% del scroll, cargar más
-      final bloc = context.read<TransactionsBloc>();
-      final state = bloc.state;
-      if (state is TransactionsLoaded && state.hasMore && !state.isLoadingMore) {
-        bloc.add(const LoadMoreTransactionsEvent());
+      final bloc = _bloc;
+      if (bloc != null) {
+        final state = bloc.state;
+        if (state is TransactionsLoaded && state.hasMore && !state.isLoadingMore) {
+          bloc.add(const LoadMoreTransactionsEvent());
+        }
       }
     }
   }
@@ -51,6 +54,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _bloc = null; // Limpiar referencia
     super.dispose();
   }
 
@@ -116,6 +120,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
     return BlocProvider(
       create: (context) {
         final bloc = getIt<TransactionsBloc>();
+        
+        // Guardar referencia al bloc para usar en el scroll listener
+        _bloc = bloc;
         
         // Si hay un filtro inicial, cargar directamente con ese filtro
         if (widget.initialCategoryFilter != null) {
