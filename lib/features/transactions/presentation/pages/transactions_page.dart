@@ -38,13 +38,19 @@ class _TransactionsPageState extends State<TransactionsPage> {
   }
   
   void _onScroll() {
+    if (!mounted) return; // Verificar que el widget esté montado
+    
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
       // Cuando el usuario está al 80% del scroll, cargar más
       final bloc = _bloc;
-      if (bloc != null) {
-        final state = bloc.state;
-        if (state is TransactionsLoaded && state.hasMore && !state.isLoadingMore) {
-          bloc.add(const LoadMoreTransactionsEvent());
+      if (bloc != null && mounted) {
+        try {
+          final state = bloc.state;
+          if (state is TransactionsLoaded && state.hasMore && !state.isLoadingMore) {
+            bloc.add(const LoadMoreTransactionsEvent());
+          }
+        } catch (e) {
+          print('[TransactionsPage] Error en _onScroll: $e');
         }
       }
     }
