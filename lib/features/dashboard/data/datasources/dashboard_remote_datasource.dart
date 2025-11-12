@@ -204,6 +204,9 @@ abstract class DashboardRemoteDataSource {
     bool isNetAmount = true,
     String taxContext = 'other',
   });
+  Future<TransactionModel> uncategorizeTransaction({
+    required String transactionId,
+  });
   Future<TransactionModel> ignoreTransaction({
     required String transactionId,
     bool isIgnored = true,
@@ -747,6 +750,44 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('❌ [DATASOURCE] Stack trace: $stackTrace');
       throw UnexpectedException(
         message: 'Error inesperado al crear fuente de ingreso',
+        originalException: e,
+      );
+    }
+  }
+
+  @override
+  Future<TransactionModel> uncategorizeTransaction({
+    required String transactionId,
+  }) async {
+    try {
+      print('[DATASOURCE] Descategorizando transacción $transactionId');
+      final response = await apiClient.patch(
+        '/transactions/$transactionId/uncategorize/',
+      );
+
+      print('[DATASOURCE] Respuesta de descategorización recibida');
+      print('[DATASOURCE] Status code: ${response.statusCode}');
+      
+      final transaction = TransactionModel.fromJson(response.data as Map<String, dynamic>);
+      print('[DATASOURCE] Transacción descategorizada correctamente');
+      return transaction;
+    } on DioException catch (e) {
+      print('[DATASOURCE] DioException en descategorización: ${e.type}');
+      print('[DATASOURCE] Error: ${e.error}');
+      print('[DATASOURCE] Response: ${e.response?.data}');
+      
+      if (e.error is Exception) {
+        throw e.error as Exception;
+      }
+      throw UnexpectedException(
+        message: 'Error al descategorizar transacción',
+        originalException: e,
+      );
+    } catch (e, stackTrace) {
+      print('[DATASOURCE] Exception inesperada en descategorización: $e');
+      print('[DATASOURCE] Stack trace: $stackTrace');
+      throw UnexpectedException(
+        message: 'Error inesperado al descategorizar transacción',
         originalException: e,
       );
     }
