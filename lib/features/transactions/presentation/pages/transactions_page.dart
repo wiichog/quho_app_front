@@ -29,26 +29,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   bool _isSearching = false;
-  bool _hasAppliedInitialFilter = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    
-    // Aplicar filtro inicial si se proporcionó
-    if (widget.initialCategoryFilter != null && !_hasAppliedInitialFilter) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.read<TransactionsBloc>().add(
-            ApplyFiltersEvent(
-              category: widget.initialCategoryFilter,
-            ),
-          );
-          _hasAppliedInitialFilter = true;
-        }
-      });
-    }
   }
   
   void _onScroll() {
@@ -129,8 +114,20 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<TransactionsBloc>()
-        ..add(const LoadTransactionsEvent(page: 1, isRefresh: true)),
+      create: (context) {
+        final bloc = getIt<TransactionsBloc>()
+          ..add(const LoadTransactionsEvent(page: 1, isRefresh: true));
+        
+        // Si hay un filtro inicial, aplicarlo después de cargar
+        if (widget.initialCategoryFilter != null) {
+          // Usar Future.delayed para dar tiempo a que se carguen las transacciones primero
+          Future.delayed(const Duration(milliseconds: 300), () {
+            bloc.add(ApplyFiltersEvent(category: widget.initialCategoryFilter));
+          });
+        }
+        
+        return bloc;
+      },
       child: Builder(
         builder: (blocContext) => Scaffold(
         backgroundColor: AppColors.gray50,
