@@ -38,6 +38,34 @@ class RemainingBalanceCard extends StatefulWidget {
 }
 
 class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
+  List<FixedExpenseModel>? _fixedExpenses;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFixedExpenses();
+  }
+
+  Future<void> _loadFixedExpenses() async {
+    try {
+      final datasource = getIt<DashboardRemoteDataSource>();
+      final expenses = await datasource.getFixedExpenses();
+      if (mounted) {
+        setState(() {
+          _fixedExpenses = expenses;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _showBreakdownModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -60,21 +88,44 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Calcular gasto diario, si es negativo mostrar cero
-    final rawDailyBudget = widget.daysRemaining > 0 ? widget.remainingForMonth / widget.daysRemaining : 0.0;
-    final dailyBudget = rawDailyBudget > 0 ? rawDailyBudget : 0.0; // lo mostrado
+    // Calcular gastos fijos pendientes (CÁLCULO CORRECTO)
+    double pendingFixedExpenses = 0.0;
+    
+    if (_fixedExpenses != null && !_isLoading) {
+      for (final expense in _fixedExpenses!) {
+        final tracking = expense.tracking;
+        // Solo contar gastos que NO estén ignorados NI completados
+        if (tracking != null && !tracking.isIgnored && !tracking.isClosed) {
+          final remaining = tracking.remainingAmount;
+          if (remaining > 0) {
+            pendingFixedExpenses += remaining;
+          }
+        } else if (tracking == null) {
+          // Si no hay tracking, contar el monto completo
+          pendingFixedExpenses += expense.amount;
+        }
+      }
+    }
+    
+    // CÁLCULO CORRECTO: Balance - Gastos fijos pendientes / Días restantes
+    final availableAfterFixedExpenses = widget.balance - pendingFixedExpenses;
+    final dailyBudget = widget.daysRemaining > 0 
+        ? (availableAfterFixedExpenses / widget.daysRemaining).clamp(0.0, double.infinity)
+        : 0.0;
     
     // DEBUG: Imprimir valores para diagnóstico
     print('[RemainingBalanceCard] balance: ${widget.balance}');
-    print('[RemainingBalanceCard] dailyBudget (mostrado): $dailyBudget');
+    print('[RemainingBalanceCard] pendingFixedExpenses: $pendingFixedExpenses');
+    print('[RemainingBalanceCard] availableAfterFixedExpenses: $availableAfterFixedExpenses');
+    print('[RemainingBalanceCard] dailyBudget: $dailyBudget');
     
-    // Lógica: El color se basa en el BALANCE DISPONIBLE
+    // Lógica: El color se basa en el BALANCE DISPONIBLE DESPUÉS DE GASTOS FIJOS
     const epsilon = 0.01;
-    final bool isNegativeBalance = widget.balance < -epsilon; // Balance negativo → ROJO
-    final bool isNeutral = widget.balance >= -epsilon && widget.balance <= epsilon; // Balance cero → GRIS
-    final bool isPositive = widget.balance > epsilon; // Balance positivo → VERDE
-    final bool hasRealDeficit = rawDailyBudget < -epsilon; // Para el mensaje explicativo
-    final remainingAbs = widget.remainingForMonth.abs();
+    final bool isNegativeBalance = availableAfterFixedExpenses < -epsilon; // Déficit → ROJO
+    final bool isNeutral = availableAfterFixedExpenses >= -epsilon && availableAfterFixedExpenses <= epsilon; // Cero → GRIS
+    final bool isPositive = availableAfterFixedExpenses > epsilon; // Positivo → VERDE
+    final bool hasRealDeficit = availableAfterFixedExpenses < -epsilon;
+    final deficitAmount = hasRealDeficit ? availableAfterFixedExpenses.abs() : 0.0;
     
     print('[RemainingBalanceCard] isNegativeBalance: $isNegativeBalance, isNeutral: $isNeutral, isPositive: $isPositive');
 
@@ -167,10 +218,10 @@ class _RemainingBalanceCardState extends State<RemainingBalanceCard> {
               Expanded(
                 child: Text(
                   hasRealDeficit
-                      ? 'Según tus gastos presupuestados, te faltarían ${Formatters.currency(remainingAbs)}. Considera reducir gastos.'
+                      ? 'Según tus gastos presupuestados, te faltarían ${Formatters.currency(deficitAmount)}. Considera reducir gastos.'
                       : (isNeutral
                           ? 'Ya has alcanzado tu presupuesto del mes. Evita nuevos gastos.'
-                          : 'Si respetas tu presupuesto, te sobrarán ${Formatters.currency(widget.remainingForMonth)} al final del mes.'),
+                          : 'Si respetas tu presupuesto y tus gastos fijos, podrás gastar este monto diario durante ${widget.daysRemaining} días.'),
                   style: AppTextStyles.caption(
                     color: hasRealDeficit
                         ? AppColors.red
