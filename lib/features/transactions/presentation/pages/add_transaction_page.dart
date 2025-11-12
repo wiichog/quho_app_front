@@ -94,8 +94,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         amount: amount,
         description: description,
         date: _selectedDate,
-        categoryId: _selectedCategory?.id,
-        incomeSourceId: _selectedIncomeSource?.id,
+        categoryId: null, // TODO: Agregar selector de categoría en el formulario
+        incomeSourceId: null, // TODO: Agregar selector de fuente de ingreso en el formulario
       );
       
       if (!mounted) return;

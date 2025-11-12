@@ -310,12 +310,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Guardar tokens
       await localDataSource.saveTokens(
-        accessToken: authResponse.access,
-        refreshToken: authResponse.refresh,
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
       );
 
       // Guardar usuario
-      await localDataSource.saveUser(authResponse.user);
+      await localDataSource.saveUser(authResponse.user as UserModel);
 
       return Right(authResponse.toEntity());
     } on UnauthorizedException catch (e) {

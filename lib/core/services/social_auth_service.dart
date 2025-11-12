@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -69,28 +69,46 @@ class SocialAuthService {
     try {
       print('🍎 [SOCIAL_AUTH] Iniciando Apple Sign In...');
 
-      if (!Platform.isIOS && !Platform.isMacOS) {
-        print('⚠️ [SOCIAL_AUTH] Apple Sign In solo disponible en iOS/macOS');
-        throw UnsupportedError('Apple Sign In solo disponible en iOS/macOS');
+      // Apple Sign In está disponible en iOS, macOS y Web
+      if (kIsWeb) {
+        // En web, usar el método web de Sign In with Apple
+        final credential = await SignInWithApple.getAppleIDCredential(
+          scopes: [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+        );
+
+        print('✅ [SOCIAL_AUTH] Apple Sign In exitoso (Web)');
+
+        return SocialAuthResult(
+          provider: 'apple',
+          idToken: credential.identityToken,
+          authorizationCode: credential.authorizationCode,
+          email: credential.email,
+          firstName: credential.givenName,
+          lastName: credential.familyName,
+        );
+      } else {
+        // En iOS/macOS
+        final credential = await SignInWithApple.getAppleIDCredential(
+          scopes: [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+        );
+
+        print('✅ [SOCIAL_AUTH] Apple Sign In exitoso');
+
+        return SocialAuthResult(
+          provider: 'apple',
+          idToken: credential.identityToken,
+          authorizationCode: credential.authorizationCode,
+          email: credential.email,
+          firstName: credential.givenName,
+          lastName: credential.familyName,
+        );
       }
-
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      print('✅ [SOCIAL_AUTH] Apple Sign In exitoso');
-
-      return SocialAuthResult(
-        provider: 'apple',
-        idToken: credential.identityToken,
-        authorizationCode: credential.authorizationCode,
-        email: credential.email,
-        firstName: credential.givenName,
-        lastName: credential.familyName,
-      );
     } catch (e, stackTrace) {
       print('❌ [SOCIAL_AUTH] Error en Apple Sign In: $e');
       print('Stack trace: $stackTrace');

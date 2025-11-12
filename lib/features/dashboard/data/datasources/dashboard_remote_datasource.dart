@@ -855,7 +855,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     try {
       print('🔵 [DATASOURCE] Creando transacción: $type, $amount, $description');
       
-      final data = {
+      final data = <String, dynamic>{
         'transaction_type': type == 'expense' ? 'expense' : 'income',
         'amount': amount.toString(),
         'description': description,
