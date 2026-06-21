@@ -62,8 +62,10 @@ export default function AppTabsLayout() {
           ),
         }}
       />
-      {/* Ruta accesible pero sin pestaña propia */}
+      {/* Rutas accesibles pero sin pestaña propia */}
       <Tabs.Screen name="ai-chat" options={{ href: null }} />
+      <Tabs.Screen name="subscription" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

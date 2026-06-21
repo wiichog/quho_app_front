@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Button, Card, ScreenContainer, Text } from '@/components';
@@ -9,6 +10,7 @@ import { colors, radius, spacing, text } from '@/theme';
 import { initials } from '@/utils/formatters';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const plan = usePlan();
   const signOut = useAuthStore((s) => s.signOut);
@@ -81,9 +83,9 @@ export default function ProfileScreen() {
       <Card padded={false} style={{ marginTop: spacing.md }}>
         <MenuRow icon="person-outline" label="Editar perfil" onPress={() => setEditing(true)} />
         <Divider />
-        <MenuRow icon="workspace-premium" label="Suscripción" onPress={() => Alert.alert('Suscripción', 'Próximamente (Fase 3).')} />
+        <MenuRow icon="workspace-premium" label="Suscripción" onPress={() => router.push('/(app)/subscription')} />
         <Divider />
-        <MenuRow icon="notifications-none" label="Notificaciones" onPress={() => Alert.alert('Notificaciones', 'Próximamente (Fase 3).')} />
+        <MenuRow icon="notifications-none" label="Notificaciones" onPress={() => router.push('/(app)/notifications')} />
         <Divider />
         <MenuRow icon="help-outline" label="Ayuda" onPress={() => Alert.alert('Ayuda', 'soporte@quho.app')} />
       </Card>
