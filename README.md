@@ -58,7 +58,9 @@ src/
 
 - ✅ **Fase 1** — Fundación (design system, API, navegación, auth completo)
 - ✅ **Fase 2** — Dashboard, transacciones, finanzas, perfil, onboarding (contra el backend real)
-- ⏳ **Fase 3** — Gamificación, IA, suscripción, notificaciones (requiere habilitar esos módulos en el backend)
+- ✅ **Fase 3** — Gamificación, chat IA, suscripción (Stripe) y notificaciones (push + ajustes)
+
+> Suscripción y push requieren configuración externa (claves de Stripe; build de desarrollo/EAS para push remoto). La confirmación de transacciones por SMS necesita lectura nativa de SMS (Android, no disponible en Expo Go); el endpoint de ingesta ya existe en el backend.
 
 ## Verificación
 
