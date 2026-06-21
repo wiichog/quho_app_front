@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "app-movil",
-    "slug": "app-movil",
+    "name": "QUHO",
+    "slug": "quho-app-movil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "appmovil",
-    "userInterfaceStyle": "automatic",
+    "scheme": "quho",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
@@ -34,7 +34,9 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
