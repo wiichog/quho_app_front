@@ -66,6 +66,8 @@ export default function AppTabsLayout() {
       <Tabs.Screen name="ai-chat" options={{ href: null }} />
       <Tabs.Screen name="subscription" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="change-password" options={{ href: null }} />
+      <Tabs.Screen name="insights" options={{ href: null }} />
     </Tabs>
   );
 }

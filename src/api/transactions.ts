@@ -37,7 +37,8 @@ export interface TransactionFilters {
   start_date?: string;
   end_date?: string;
   month?: string;
-  page?: number;
+  limit?: number;
+  offset?: number;
 }
 
 export async function listTransactions(filters: TransactionFilters = {}): Promise<Paginated<Transaction>> {

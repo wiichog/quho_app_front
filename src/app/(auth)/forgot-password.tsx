@@ -70,6 +70,12 @@ export default function ForgotPasswordScreen() {
         />
 
         <Button title="Enviar instrucciones" onPress={handleSubmit(onSubmit)} loading={reset.isPending} />
+
+        <Pressable onPress={() => router.push('/(auth)/reset-password')} style={styles.haveCode}>
+          <Text variant="bodyMedium" color={colors.teal}>
+            ¿Ya tienes un código? Restablecer
+          </Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -82,4 +88,5 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
   successBox: { backgroundColor: colors.greenLight, borderRadius: 12, padding: spacing.sm, marginBottom: spacing.md },
   errorBox: { backgroundColor: colors.redPale, borderRadius: 12, padding: spacing.sm, marginBottom: spacing.md },
+  haveCode: { alignItems: 'center', marginTop: spacing.lg },
 });

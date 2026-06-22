@@ -61,6 +61,17 @@ export async function logout(refresh: string): Promise<void> {
   await api.post('/auth/logout/', { refresh });
 }
 
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  const { data } = await api.post('/auth/password/change/', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+  return data;
+}
+
 export type SocialProvider = 'google' | 'apple' | 'facebook';
 
 export async function socialAuth(

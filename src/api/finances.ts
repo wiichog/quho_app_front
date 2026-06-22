@@ -47,6 +47,14 @@ export async function createIncome(payload: {
   return data;
 }
 
+export async function updateIncome(
+  id: number,
+  payload: { name?: string; amount?: string; frequency?: string },
+): Promise<Income> {
+  const { data } = await api.patch<Income>(`/incomes/${id}/`, payload);
+  return data;
+}
+
 export async function deleteIncome(id: number): Promise<void> {
   await api.delete(`/incomes/${id}/`);
 }
@@ -79,6 +87,14 @@ export async function createFixedExpense(payload: {
   return data;
 }
 
+export async function updateFixedExpense(
+  id: number,
+  payload: { name?: string; amount?: string; frequency?: string; category?: number; due_day?: number },
+): Promise<FixedExpense> {
+  const { data } = await api.patch<FixedExpense>(`/fixed-expenses/${id}/`, payload);
+  return data;
+}
+
 export async function deleteFixedExpense(id: number): Promise<void> {
   await api.delete(`/fixed-expenses/${id}/`);
 }
@@ -106,6 +122,19 @@ export async function createGoal(payload: {
   target_date?: string;
 }): Promise<Goal> {
   const { data } = await api.post<Goal>('/goals/', payload);
+  return data;
+}
+
+export async function updateGoal(
+  id: number,
+  payload: { name?: string; target_amount?: string; target_date?: string },
+): Promise<Goal> {
+  const { data } = await api.patch<Goal>(`/goals/${id}/`, payload);
+  return data;
+}
+
+export async function completeGoal(id: number): Promise<Goal> {
+  const { data } = await api.post<Goal>(`/goals/${id}/complete/`, {});
   return data;
 }
 

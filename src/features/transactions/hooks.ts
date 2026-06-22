@@ -1,13 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import * as txApi from '@/api/transactions';
 import type { ApiError } from '@/types/api';
 
 const KEY = 'transactions';
+const PAGE_SIZE = 25;
 
 export function useTransactions(filters: txApi.TransactionFilters = {}) {
   return useQuery({
     queryKey: [KEY, filters],
     queryFn: () => txApi.listTransactions(filters),
+  });
+}
+
+/** Lista paginada con scroll infinito (limit/offset de DRF). */
+export function useInfiniteTransactions(filters: txApi.TransactionFilters = {}) {
+  return useInfiniteQuery({
+    queryKey: [KEY, 'infinite', filters],
+    queryFn: ({ pageParam = 0 }) =>
+      txApi.listTransactions({ ...filters, limit: PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((n, p) => n + p.results.length, 0);
+      return lastPage.next ? loaded : undefined;
+    },
   });
 }
 

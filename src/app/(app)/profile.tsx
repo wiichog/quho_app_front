@@ -87,6 +87,10 @@ export default function ProfileScreen() {
         <Divider />
         <MenuRow icon="notifications-none" label="Notificaciones" onPress={() => router.push('/(app)/notifications')} />
         <Divider />
+        <MenuRow icon="insights" label="Reportes e insights" onPress={() => router.push('/(app)/insights')} />
+        <Divider />
+        <MenuRow icon="lock-outline" label="Cambiar contraseña" onPress={() => router.push('/(app)/change-password')} />
+        <Divider />
         <MenuRow icon="help-outline" label="Ayuda" onPress={() => Alert.alert('Ayuda', 'soporte@quho.app')} />
       </Card>
 

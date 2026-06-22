@@ -37,3 +37,9 @@ export function useConfirmPasswordReset() {
     mutationFn: ({ token, newPassword }) => authApi.confirmPasswordReset(token, newPassword),
   });
 }
+
+export function useChangePassword() {
+  return useMutation<{ message: string }, ApiError, { current: string; next: string }>({
+    mutationFn: ({ current, next }) => authApi.changePassword(current, next),
+  });
+}

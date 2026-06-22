@@ -68,6 +68,48 @@ export function useCreateGoal() {
   });
 }
 
+export function useUpdateIncome() {
+  const qc = useQueryClient();
+  return useMutation<finApi.Income, ApiError, { id: number; payload: { name?: string; amount?: string; frequency?: string } }>({
+    mutationFn: ({ id, payload }) => finApi.updateIncome(id, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['incomes'] });
+      qc.invalidateQueries({ queryKey: ['budget'] });
+    },
+  });
+}
+
+export function useUpdateFixedExpense() {
+  const qc = useQueryClient();
+  return useMutation<
+    finApi.FixedExpense,
+    ApiError,
+    { id: number; payload: { name?: string; amount?: string; frequency?: string } }
+  >({
+    mutationFn: ({ id, payload }) => finApi.updateFixedExpense(id, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fixed-expenses'] });
+      qc.invalidateQueries({ queryKey: ['budget'] });
+    },
+  });
+}
+
+export function useUpdateGoal() {
+  const qc = useQueryClient();
+  return useMutation<finApi.Goal, ApiError, { id: number; payload: { name?: string; target_amount?: string; target_date?: string } }>({
+    mutationFn: ({ id, payload }) => finApi.updateGoal(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['goals'] }),
+  });
+}
+
+export function useCompleteGoal() {
+  const qc = useQueryClient();
+  return useMutation<finApi.Goal, ApiError, number>({
+    mutationFn: finApi.completeGoal,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['goals'] }),
+  });
+}
+
 export function useDeleteIncome() {
   const qc = useQueryClient();
   return useMutation<void, ApiError, number>({

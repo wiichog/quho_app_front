@@ -1,53 +1,103 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState, Loading, Text, TransactionRow } from '@/components';
 import type { TransactionType } from '@/api/transactions';
-import { useTransactions } from '@/features/transactions/hooks';
-import { colors, radius, shadow, spacing } from '@/theme';
+import { useInfiniteTransactions } from '@/features/transactions/hooks';
+import { colors, radius, shadow, spacing, text } from '@/theme';
+import { apiMonth } from '@/utils/formatters';
 
-type FilterValue = 'all' | TransactionType;
-const FILTERS: { label: string; value: FilterValue }[] = [
+type TypeFilter = 'all' | TransactionType;
+type Period = 'all' | 'this' | 'last';
+
+const TYPE_FILTERS: { label: string; value: TypeFilter }[] = [
   { label: 'Todos', value: 'all' },
   { label: 'Gastos', value: 'expense' },
   { label: 'Ingresos', value: 'income' },
 ];
+const PERIODS: { label: string; value: Period }[] = [
+  { label: 'Este mes', value: 'this' },
+  { label: 'Mes pasado', value: 'last' },
+  { label: 'Todo', value: 'all' },
+];
+
+function lastMonth(): string {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return apiMonth(d);
+}
 
 export default function TransactionsListScreen() {
   const router = useRouter();
-  const [filter, setFilter] = useState<FilterValue>('all');
+  const [type, setType] = useState<TypeFilter>('all');
+  const [period, setPeriod] = useState<Period>('this');
+  const [search, setSearch] = useState('');
 
-  const query = useTransactions(filter === 'all' ? {} : { transaction_type: filter });
-  const items = query.data?.results ?? [];
+  const filters = useMemo(() => {
+    const f: Record<string, string> = {};
+    if (type !== 'all') f.transaction_type = type;
+    if (period === 'this') f.month = apiMonth();
+    else if (period === 'last') f.month = lastMonth();
+    return f;
+  }, [type, period]);
+
+  const query = useInfiniteTransactions(filters);
+  const allItems = useMemo(
+    () => (query.data?.pages ?? []).flatMap((p) => p.results),
+    [query.data],
+  );
+  const items = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allItems;
+    return allItems.filter(
+      (t) =>
+        (t.description ?? '').toLowerCase().includes(q) ||
+        (t.category_name ?? '').toLowerCase().includes(q),
+    );
+  }, [allItems, search]);
+
+  const total = query.data?.pages[0]?.count;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text variant="h2">Movimientos</Text>
-        {query.data?.count != null ? (
+        {total != null ? (
           <Text variant="bodySmall" color={colors.gray500}>
-            {query.data.count} en total
+            {total} en total
           </Text>
         ) : null}
       </View>
 
-      <View style={styles.chips}>
-        {FILTERS.map((f) => {
-          const active = filter === f.value;
-          return (
-            <Pressable
-              key={f.value}
-              onPress={() => setFilter(f.value)}
-              style={[styles.chip, active && styles.chipActive]}
-            >
-              <Text variant="caption" color={active ? colors.white : colors.gray600}>
-                {f.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={styles.searchRow}>
+        <MaterialIcons name="search" size={20} color={colors.gray400} />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Buscar por descripción o categoría"
+          placeholderTextColor={colors.gray400}
+          style={[styles.searchInput, text.bodyMedium(colors.gray900)]}
+        />
+        {search ? (
+          <Pressable onPress={() => setSearch('')} hitSlop={8}>
+            <MaterialIcons name="close" size={18} color={colors.gray400} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View style={styles.chipsRow}>
+        {TYPE_FILTERS.map((f) => (
+          <Chip key={f.value} label={f.label} active={type === f.value} onPress={() => setType(f.value)} />
+        ))}
+        <View style={styles.chipSpacer} />
+      </View>
+      <View style={styles.chipsRow}>
+        {PERIODS.map((p) => (
+          <Chip key={p.value} label={p.label} active={period === p.value} onPress={() => setPeriod(p.value)} subtle />
+        ))}
       </View>
 
       {query.isLoading ? (
@@ -58,16 +108,25 @@ export default function TransactionsListScreen() {
           keyExtractor={(t) => String(t.id)}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
-          refreshing={query.isRefetching}
+          refreshing={query.isRefetching && !query.isFetchingNextPage}
           onRefresh={query.refetch}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
+          }}
           renderItem={({ item }) => (
             <TransactionRow tx={item} onPress={() => router.push(`/(app)/transactions/${item.id}`)} />
           )}
+          ListFooterComponent={
+            query.isFetchingNextPage ? (
+              <ActivityIndicator color={colors.teal} style={{ marginVertical: spacing.md }} />
+            ) : null
+          }
           ListEmptyComponent={
             <EmptyState
               icon="receipt-long"
               title="Sin movimientos"
-              message="No hay movimientos con este filtro."
+              message="No hay movimientos con estos filtros."
               actionLabel="Agregar movimiento"
               onAction={() => router.push('/(app)/transactions/add')}
             />
@@ -82,10 +141,49 @@ export default function TransactionsListScreen() {
   );
 }
 
+function Chip({
+  label,
+  active,
+  onPress,
+  subtle,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  subtle?: boolean;
+}) {
+  const activeBg = subtle ? colors.darkNavy : colors.teal;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.chip, active && { backgroundColor: activeBg, borderColor: activeBg }]}
+    >
+      <Text variant="caption" color={active ? colors.white : colors.gray600}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.gray50 },
   header: { paddingHorizontal: spacing.screenH, paddingTop: spacing.sm },
-  chips: { flexDirection: 'row', gap: spacing.xs, paddingHorizontal: spacing.screenH, paddingVertical: spacing.md },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginHorizontal: spacing.screenH,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    height: 44,
+    backgroundColor: colors.white,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+  },
+  searchInput: { flex: 1, height: '100%' },
+  chipsRow: { flexDirection: 'row', gap: spacing.xs, paddingHorizontal: spacing.screenH, marginTop: spacing.sm },
+  chipSpacer: { flex: 1 },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -94,8 +192,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray200,
   },
-  chipActive: { backgroundColor: colors.teal, borderColor: colors.teal },
-  list: { paddingHorizontal: spacing.screenH, paddingBottom: 120, flexGrow: 1 },
+  list: { paddingHorizontal: spacing.screenH, paddingTop: spacing.sm, paddingBottom: 120, flexGrow: 1 },
   sep: { height: 1, backgroundColor: colors.gray100 },
   fab: {
     position: 'absolute',

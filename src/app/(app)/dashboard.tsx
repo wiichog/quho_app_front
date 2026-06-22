@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { PieChart } from 'react-native-gifted-charts';
 import {
   Card,
   EmptyState,
@@ -14,7 +15,7 @@ import {
 import { useBudgetSummary, usePlan } from '@/features/finances/hooks';
 import { useTransactions } from '@/features/transactions/hooks';
 import { useAuthStore } from '@/store/authStore';
-import { colors, gradients, radius, spacing } from '@/theme';
+import { colorForCategory, colors, gradients, radius, spacing } from '@/theme';
 import { apiMonth, currency, monthYear } from '@/utils/formatters';
 import { amountOf } from '@/utils/money';
 
@@ -25,7 +26,7 @@ export default function DashboardScreen() {
 
   const budget = useBudgetSummary(month);
   const plan = usePlan();
-  const recent = useTransactions({ page: 1 });
+  const recent = useTransactions({ limit: 5 });
 
   const onRefresh = () => {
     budget.refetch();
@@ -40,6 +41,19 @@ export default function DashboardScreen() {
   const code = profile?.currency || 'MXN';
 
   const recentList = (recent.data?.results ?? []).slice(0, 5);
+
+  const spendingData = useMemo(() => {
+    const rows = budget.data?.category_breakdown ?? [];
+    return rows
+      .map((r) => ({
+        value: amountOf(r.spent as number),
+        text: r.category,
+        color: colorForCategory(r.category),
+      }))
+      .filter((d) => d.value > 0)
+      .slice(0, 6);
+  }, [budget.data]);
+  const totalSpending = spendingData.reduce((s, d) => s + d.value, 0);
 
   return (
     <ScreenContainer scroll refreshing={budget.isRefetching} onRefresh={onRefresh}>
@@ -136,6 +150,44 @@ export default function DashboardScreen() {
           )}
         </Card>
       )}
+
+      {/* Distribución de gastos */}
+      {spendingData.length > 0 ? (
+        <>
+          <SectionHeader title="Distribución de gastos" />
+          <Card>
+            <View style={styles.donutRow}>
+              <PieChart
+                data={spendingData}
+                donut
+                radius={70}
+                innerRadius={48}
+                centerLabelComponent={() => (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text variant="caption" color={colors.gray400}>
+                      Total
+                    </Text>
+                    <Text variant="numberSmall">{currency(totalSpending, code)}</Text>
+                  </View>
+                )}
+              />
+              <View style={styles.legend}>
+                {spendingData.map((d) => (
+                  <View key={d.text} style={styles.legendRow}>
+                    <View style={[styles.legendDot, { backgroundColor: d.color }]} />
+                    <Text variant="bodySmall" color={colors.gray600} style={styles.flex} numberOfLines={1}>
+                      {d.text}
+                    </Text>
+                    <Text variant="bodySmall" color={colors.gray500}>
+                      {totalSpending ? Math.round((d.value / totalSpending) * 100) : 0}%
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </Card>
+        </>
+      ) : null}
 
       {/* Movimientos recientes */}
       <SectionHeader
@@ -257,4 +309,8 @@ const styles = StyleSheet.create({
   progressFill: { height: 8, borderRadius: 4, backgroundColor: colors.teal },
   recentCard: { overflow: 'hidden' },
   sep: { height: 1, backgroundColor: colors.gray100, marginLeft: spacing.md + 42 + spacing.sm },
+  donutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  legend: { flex: 1, gap: spacing.xs },
+  legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
 });

@@ -76,12 +76,19 @@ export default function TransactionDetailScreen() {
           </Card>
 
           <Button
+            title="Editar movimiento"
+            variant="outline"
+            icon="edit"
+            onPress={() => router.push(`/(app)/transactions/add?id=${txId}`)}
+            style={{ marginTop: spacing.xl }}
+          />
+          <Button
             title="Eliminar movimiento"
             variant="danger"
             icon="delete-outline"
             onPress={confirmDelete}
             loading={del.isPending}
-            style={{ marginTop: spacing.xl }}
+            style={{ marginTop: spacing.sm }}
           />
         </View>
       )}

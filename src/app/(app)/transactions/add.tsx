@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -15,14 +15,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Text } from '@/components';
 import type { TransactionType } from '@/api/transactions';
 import { useCategories } from '@/features/finances/hooks';
-import { useCreateTransaction } from '@/features/transactions/hooks';
+import {
+  useCreateTransaction,
+  useTransaction,
+  useUpdateTransaction,
+} from '@/features/transactions/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { colorForCategory, colors, radius, spacing, text } from '@/theme';
 import { dateShort } from '@/utils/formatters';
+import { amountOf } from '@/utils/money';
 
 export default function AddTransactionScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = !!id;
+  const txId = Number(id);
+
   const create = useCreateTransaction();
+  const update = useUpdateTransaction();
+  const detail = useTransaction(editing ? txId : NaN);
   const categories = useCategories();
   const currencyCode = useAuthStore((s) => s.profile?.currency) || 'MXN';
 
@@ -33,6 +44,20 @@ export default function AddTransactionScreen() {
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Prefill en modo edición
+  useEffect(() => {
+    if (editing && detail.data && !prefilled) {
+      const tx = detail.data;
+      setType(tx.transaction_type === 'income' ? 'income' : 'expense');
+      setAmount(String(amountOf(tx.amount)));
+      setDescription(tx.description ?? '');
+      setCategoryId(tx.category ?? null);
+      if (tx.date) setDate(new Date(tx.date));
+      setPrefilled(true);
+    }
+  }, [editing, detail.data, prefilled]);
 
   const selectedCategory = useMemo(
     () => categories.data?.find((c) => c.id === categoryId) ?? null,
@@ -41,19 +66,23 @@ export default function AddTransactionScreen() {
 
   const numericAmount = parseFloat(amount.replace(',', '.'));
   const canSave = !Number.isNaN(numericAmount) && numericAmount > 0;
+  const pending = create.isPending || update.isPending;
+  const error = create.error?.message || update.error?.message;
 
   const onSave = () => {
-    create.mutate(
-      {
-        transaction_type: type,
-        amount: numericAmount.toFixed(2),
-        amount_currency: currencyCode,
-        date: date.toISOString().slice(0, 10),
-        description: description.trim() || undefined,
-        category: type === 'expense' ? categoryId : null,
-      },
-      { onSuccess: () => router.back() },
-    );
+    const payload = {
+      transaction_type: type,
+      amount: numericAmount.toFixed(2),
+      amount_currency: currencyCode,
+      date: date.toISOString().slice(0, 10),
+      description: description.trim() || undefined,
+      category: type === 'expense' ? categoryId : null,
+    };
+    if (editing) {
+      update.mutate({ id: txId, payload }, { onSuccess: () => router.back() });
+    } else {
+      create.mutate(payload, { onSuccess: () => router.back() });
+    }
   };
 
   return (
@@ -62,18 +91,16 @@ export default function AddTransactionScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <MaterialIcons name="close" size={26} color={colors.gray700} />
         </Pressable>
-        <Text variant="h4">Nuevo movimiento</Text>
+        <Text variant="h4">{editing ? 'Editar movimiento' : 'Nuevo movimiento'}</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <View style={styles.content}>
-        {/* Tipo */}
         <View style={styles.segment}>
           <SegmentBtn label="Gasto" active={type === 'expense'} onPress={() => setType('expense')} danger />
           <SegmentBtn label="Ingreso" active={type === 'income'} onPress={() => setType('income')} />
         </View>
 
-        {/* Monto */}
         <View style={styles.amountWrap}>
           <Text variant="numberMedium" color={colors.gray400}>
             $
@@ -85,17 +112,16 @@ export default function AddTransactionScreen() {
             placeholderTextColor={colors.gray300}
             keyboardType="decimal-pad"
             style={[text.numberLarge(type === 'income' ? colors.green : colors.gray900), styles.amountInput]}
-            autoFocus
+            autoFocus={!editing}
           />
         </View>
 
-        {create.isError ? (
+        {error ? (
           <Text variant="bodySmall" color={colors.red} center>
-            {create.error?.message}
+            {error}
           </Text>
         ) : null}
 
-        {/* Categoría (solo gastos) */}
         {type === 'expense' ? (
           <Pressable onPress={() => setShowCategories(true)}>
             <Card style={styles.fieldRow}>
@@ -108,7 +134,6 @@ export default function AddTransactionScreen() {
           </Pressable>
         ) : null}
 
-        {/* Fecha */}
         <Pressable onPress={() => setShowPicker(true)}>
           <Card style={styles.fieldRow}>
             <MaterialIcons name="event" size={20} color={colors.gray500} />
@@ -119,7 +144,6 @@ export default function AddTransactionScreen() {
           </Card>
         </Pressable>
 
-        {/* Descripción */}
         <Card style={styles.fieldRow}>
           <MaterialIcons name="notes" size={20} color={colors.gray500} />
           <TextInput
@@ -133,7 +157,7 @@ export default function AddTransactionScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Button title="Guardar" onPress={onSave} disabled={!canSave} loading={create.isPending} />
+        <Button title={editing ? 'Guardar cambios' : 'Guardar'} onPress={onSave} disabled={!canSave} loading={pending} />
       </View>
 
       {showPicker ? (
@@ -195,10 +219,7 @@ function SegmentBtn({
 }) {
   const activeColor = danger ? colors.red : colors.green;
   return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.segmentBtn, active && { backgroundColor: colors.white }]}
-    >
+    <Pressable onPress={onPress} style={[styles.segmentBtn, active && { backgroundColor: colors.white }]}>
       <Text variant="h5" color={active ? activeColor : colors.gray500}>
         {label}
       </Text>
@@ -217,12 +238,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   content: { flex: 1, paddingHorizontal: spacing.lg, gap: spacing.md },
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: colors.gray100,
-    borderRadius: radius.sm,
-    padding: 4,
-  },
+  segment: { flexDirection: 'row', backgroundColor: colors.gray100, borderRadius: radius.sm, padding: 4 },
   segmentBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.xs },
   amountWrap: {
     flexDirection: 'row',
@@ -243,14 +259,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     maxHeight: '70%',
   },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.gray300,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-  },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.gray300, alignSelf: 'center', marginTop: spacing.sm },
   modalTitle: { marginVertical: spacing.md },
   catItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
   catDot: { width: 14, height: 14, borderRadius: 7 },
