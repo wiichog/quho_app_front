@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Text, TextField } from '@/components';
+import { Button, OwlLogo, Text, TextField } from '@/components';
 import { useLogin } from '@/features/auth/hooks';
 import { colors, spacing } from '@/theme';
 import { loginSchema, type LoginInput } from '@/utils/validators';
@@ -39,7 +39,7 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text variant="h1">🦉 QUHO</Text>
+            <OwlLogo size={52} wordmarkSize={34} />
             <Text variant="bodyLarge" color={colors.gray500} style={styles.subtitle}>
               Bienvenido de vuelta
             </Text>

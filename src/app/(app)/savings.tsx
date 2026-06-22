@@ -9,9 +9,11 @@ import {
   useCreateSavingsAccount,
   useCreateSavingsMovement,
   useSavingsAccounts,
+  useSavingsMovements,
 } from '@/features/finances/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { colors, radius, spacing, text } from '@/theme';
+import { dateShort } from '@/utils/formatters';
 import { moneyText } from '@/utils/money';
 
 type MovementKind = 'deposit' | 'withdrawal';
@@ -23,6 +25,7 @@ export default function SavingsScreen() {
 
   const [showNewAccount, setShowNewAccount] = useState(false);
   const [movementFor, setMovementFor] = useState<{ account: SavingsAccount; kind: MovementKind } | null>(null);
+  const [historyFor, setHistoryFor] = useState<SavingsAccount | null>(null);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -78,6 +81,12 @@ export default function SavingsScreen() {
                   style={styles.flex}
                 />
               </View>
+              <Pressable style={styles.historyLink} onPress={() => setHistoryFor(acc)}>
+                <MaterialIcons name="history" size={16} color={colors.gray500} />
+                <Text variant="caption" color={colors.gray500}>
+                  Ver movimientos
+                </Text>
+              </Pressable>
             </Card>
           ))}
         </ScrollView>
@@ -89,7 +98,75 @@ export default function SavingsScreen() {
         currencyCode={code}
         onClose={() => setMovementFor(null)}
       />
+      <HistoryModal account={historyFor} currencyCode={code} onClose={() => setHistoryFor(null)} />
     </SafeAreaView>
+  );
+}
+
+function HistoryModal({
+  account,
+  currencyCode,
+  onClose,
+}: {
+  account: SavingsAccount | null;
+  currencyCode: string;
+  onClose: () => void;
+}) {
+  const movements = useSavingsMovements(account?.id ?? null);
+  const items = movements.data ?? [];
+
+  return (
+    <Modal visible={!!account} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose} />
+      <View style={[styles.sheet, { maxHeight: '75%' }]}>
+        <View style={styles.handle} />
+        <Text variant="h4" style={{ marginVertical: spacing.md }}>
+          Movimientos · {account?.name}
+        </Text>
+        {movements.isLoading ? (
+          <Text variant="bodyMedium" color={colors.gray500} style={{ paddingVertical: spacing.lg }}>
+            Cargando…
+          </Text>
+        ) : items.length === 0 ? (
+          <Text variant="bodyMedium" color={colors.gray500} style={{ paddingVertical: spacing.lg }}>
+            Aún no hay movimientos en esta cuenta.
+          </Text>
+        ) : (
+          <ScrollView>
+            {items.map((m) => {
+              const isDeposit = m.kind === 'deposit';
+              return (
+                <View key={m.id} style={styles.moveRow}>
+                  <View
+                    style={[
+                      styles.moveIcon,
+                      { backgroundColor: isDeposit ? colors.greenLight : colors.redLight },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name={isDeposit ? 'arrow-downward' : 'arrow-upward'}
+                      size={18}
+                      color={isDeposit ? colors.green : colors.red}
+                    />
+                  </View>
+                  <View style={styles.flex}>
+                    <Text variant="h5">{isDeposit ? 'Depósito' : 'Retiro'}</Text>
+                    <Text variant="bodySmall" color={colors.gray500}>
+                      {dateShort(m.date)}
+                      {m.note ? ` · ${m.note}` : ''}
+                    </Text>
+                  </View>
+                  <Text variant="numberSmall" color={isDeposit ? colors.green : colors.gray900}>
+                    {isDeposit ? '+' : '-'}
+                    {moneyText(m.amount, currencyCode).replace(/^[-+]/, '')}
+                  </Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        )}
+      </View>
+    </Modal>
   );
 }
 
@@ -233,6 +310,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   accountActions: { flexDirection: 'row', gap: spacing.sm },
+  historyLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: spacing.xs },
+  moveRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
+  moveIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: '#00000055' },
   sheet: {
     backgroundColor: colors.white,

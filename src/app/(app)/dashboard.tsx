@@ -7,8 +7,9 @@ import { PieChart } from 'react-native-gifted-charts';
 import {
   Card,
   EmptyState,
-  Loading,
+  ListSkeleton,
   ScreenContainer,
+  Skeleton,
   Text,
   TransactionRow,
 } from '@/components';
@@ -121,7 +122,12 @@ export default function DashboardScreen() {
       {/* Presupuesto por categoría */}
       <SectionHeader title="Presupuesto del mes" />
       {budget.isLoading ? (
-        <Card><Loading /></Card>
+        <Card>
+          <Skeleton width="50%" height={14} />
+          <Skeleton height={8} radius={4} style={{ marginTop: 10 }} />
+          <Skeleton width="40%" height={14} style={{ marginTop: 18 }} />
+          <Skeleton height={8} radius={4} style={{ marginTop: 10 }} />
+        </Card>
       ) : (
         <Card>
           {(budget.data?.category_breakdown ?? []).length === 0 ? (
@@ -197,8 +203,8 @@ export default function DashboardScreen() {
       />
       <Card padded={false} style={styles.recentCard}>
         {recent.isLoading ? (
-          <View style={{ padding: spacing.lg }}>
-            <Loading />
+          <View style={{ padding: spacing.md }}>
+            <ListSkeleton rows={4} />
           </View>
         ) : recentList.length === 0 ? (
           <View style={{ padding: spacing.md }}>

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, Loading, Text, TransactionRow } from '@/components';
+import { EmptyState, ListSkeleton, Text, TransactionRow } from '@/components';
 import type { TransactionType } from '@/api/transactions';
 import { useInfiniteTransactions } from '@/features/transactions/hooks';
 import { colors, radius, shadow, spacing, text } from '@/theme';
@@ -101,7 +101,9 @@ export default function TransactionsListScreen() {
       </View>
 
       {query.isLoading ? (
-        <Loading />
+        <View style={styles.skeleton}>
+          <ListSkeleton rows={8} />
+        </View>
       ) : (
         <FlatList
           data={items}
@@ -193,6 +195,7 @@ const styles = StyleSheet.create({
     borderColor: colors.gray200,
   },
   list: { paddingHorizontal: spacing.screenH, paddingTop: spacing.sm, paddingBottom: 120, flexGrow: 1 },
+  skeleton: { paddingHorizontal: spacing.screenH, paddingTop: spacing.md },
   sep: { height: 1, backgroundColor: colors.gray100 },
   fab: {
     position: 'absolute',

@@ -46,6 +46,14 @@ export function useCreateSavingsAccount() {
   });
 }
 
+export function useSavingsMovements(account: number | null) {
+  return useQuery({
+    queryKey: ['savings-movements', account],
+    queryFn: () => finApi.listSavingsMovements(account ?? undefined),
+    enabled: account != null,
+  });
+}
+
 export function useCreateSavingsMovement() {
   const qc = useQueryClient();
   return useMutation<
