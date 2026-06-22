@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Button, Card, ScreenContainer, Text } from '@/components';
 import { usePlan } from '@/features/finances/hooks';
 import { useUpdateProfile } from '@/features/me/hooks';
@@ -14,7 +14,31 @@ export default function ProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
   const plan = usePlan();
   const signOut = useAuthStore((s) => s.signOut);
+  const biometricsEnabled = useAuthStore((s) => s.biometricsEnabled);
+  const setBiometricsEnabled = useAuthStore((s) => s.setBiometricsEnabled);
   const [editing, setEditing] = useState(false);
+
+  const toggleBiometrics = async (value: boolean) => {
+    if (!value) {
+      setBiometricsEnabled(false);
+      return;
+    }
+    try {
+      const LocalAuthentication = await import('expo-local-authentication');
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !enrolled) {
+        Alert.alert(
+          'No disponible',
+          'Tu dispositivo no tiene biometría configurada. Actívala en los ajustes del sistema.',
+        );
+        return;
+      }
+      setBiometricsEnabled(true);
+    } catch {
+      Alert.alert('No disponible', 'La biometría no está disponible en este entorno.');
+    }
+  };
 
   const fullName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : 'Usuario';
   const isPremium = plan.data?.is_premium;
@@ -90,6 +114,19 @@ export default function ProfileScreen() {
         <MenuRow icon="insights" label="Reportes e insights" onPress={() => router.push('/(app)/insights')} />
         <Divider />
         <MenuRow icon="lock-outline" label="Cambiar contraseña" onPress={() => router.push('/(app)/change-password')} />
+        <Divider />
+        <View style={styles.menuRow}>
+          <MaterialIcons name="fingerprint" size={22} color={colors.gray600} />
+          <Text variant="bodyLarge" style={styles.flex}>
+            Desbloqueo biométrico
+          </Text>
+          <Switch
+            value={biometricsEnabled}
+            onValueChange={toggleBiometrics}
+            trackColor={{ true: colors.teal, false: colors.gray300 }}
+            thumbColor={colors.white}
+          />
+        </View>
         <Divider />
         <MenuRow icon="help-outline" label="Ayuda" onPress={() => Alert.alert('Ayuda', 'soporte@quho.app')} />
       </Card>

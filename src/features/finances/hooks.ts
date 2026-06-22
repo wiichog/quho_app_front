@@ -34,6 +34,33 @@ export function useGoals() {
   return useQuery({ queryKey: ['goals'], queryFn: finApi.listGoals });
 }
 
+export function useSavingsAccounts() {
+  return useQuery({ queryKey: ['savings-accounts'], queryFn: finApi.listSavingsAccounts });
+}
+
+export function useCreateSavingsAccount() {
+  const qc = useQueryClient();
+  return useMutation<finApi.SavingsAccount, ApiError, string>({
+    mutationFn: finApi.createSavingsAccount,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['savings-accounts'] }),
+  });
+}
+
+export function useCreateSavingsMovement() {
+  const qc = useQueryClient();
+  return useMutation<
+    finApi.SavingsMovement,
+    ApiError,
+    { account: number; amount: string; kind: 'deposit' | 'withdrawal'; date: string; note?: string }
+  >({
+    mutationFn: finApi.createSavingsMovement,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['savings-accounts'] });
+      qc.invalidateQueries({ queryKey: ['goals'] });
+    },
+  });
+}
+
 export function useCreateIncome() {
   const qc = useQueryClient();
   return useMutation<finApi.Income, ApiError, { name: string; amount: string; frequency: string }>({

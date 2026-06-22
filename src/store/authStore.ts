@@ -27,11 +27,15 @@ interface AuthState {
   profile: UserProfile | null;
   plan: string;
   onboardingCompleted: boolean;
+  biometricsEnabled: boolean;
+  locked: boolean;
 
   bootstrap: () => Promise<void>;
   signIn: (res: AuthResponse) => Promise<void>;
   signOut: () => Promise<void>;
   setOnboardingCompleted: (done: boolean) => Promise<void>;
+  setBiometricsEnabled: (enabled: boolean) => Promise<void>;
+  unlock: () => void;
   refreshProfile: () => Promise<void>;
   handleSessionExpired: () => void;
 }
@@ -62,11 +66,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   plan: 'free',
   onboardingCompleted: false,
+  biometricsEnabled: false,
+  locked: false,
 
   bootstrap: async () => {
+    const biometricsEnabled =
+      (await AsyncStorage.getItem(STORAGE_KEYS.biometricsEnabled)) === 'true';
     const token = await getAccessToken();
     if (!token) {
-      set({ status: 'unauthenticated' });
+      set({ status: 'unauthenticated', biometricsEnabled, locked: false });
       return;
     }
     try {
@@ -81,6 +89,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         profile,
         plan: meta.plan,
         onboardingCompleted,
+        biometricsEnabled,
+        locked: biometricsEnabled, // requiere desbloqueo en arranque en frío
       });
     } catch {
       await clearTokens();
@@ -109,7 +119,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     await clearTokens();
     await AsyncStorage.multiRemove([SESSION_META_KEY, STORAGE_KEYS.userName]);
-    set({ status: 'unauthenticated', user: null, profile: null, plan: 'free', onboardingCompleted: false });
+    set({ status: 'unauthenticated', user: null, profile: null, plan: 'free', onboardingCompleted: false, locked: false });
   },
 
   setOnboardingCompleted: async (done) => {
@@ -118,6 +128,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ onboardingCompleted: done });
   },
 
+  setBiometricsEnabled: async (enabled) => {
+    await AsyncStorage.setItem(STORAGE_KEYS.biometricsEnabled, enabled ? 'true' : 'false');
+    set({ biometricsEnabled: enabled });
+  },
+
+  unlock: () => set({ locked: false }),
+
   refreshProfile: async () => {
     const profile = await getProfile();
     set({ profile });
@@ -125,6 +142,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   handleSessionExpired: () => {
     clearTokens().catch(() => undefined);
-    set({ status: 'unauthenticated', user: null, profile: null });
+    set({ status: 'unauthenticated', user: null, profile: null, locked: false });
   },
 }));

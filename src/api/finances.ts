@@ -142,6 +142,55 @@ export async function deleteGoal(id: number): Promise<void> {
   await api.delete(`/goals/${id}/`);
 }
 
+// ---------- Ahorros ----------
+export interface SavingsAccount {
+  id: number;
+  name: string;
+  balance: string | number;
+  balance_display: MoneyDict;
+  is_active: boolean;
+}
+
+export interface SavingsMovement {
+  id: number;
+  account: number;
+  account_name: string;
+  amount: string | number | MoneyDict;
+  kind: 'deposit' | 'withdrawal';
+  date: string;
+  note: string;
+  created_at: string;
+}
+
+export async function listSavingsAccounts(): Promise<SavingsAccount[]> {
+  const { data } = await api.get<Paginated<SavingsAccount> | SavingsAccount[]>('/savings/accounts/');
+  return Array.isArray(data) ? data : data.results;
+}
+
+export async function createSavingsAccount(name: string): Promise<SavingsAccount> {
+  const { data } = await api.post<SavingsAccount>('/savings/accounts/', { name });
+  return data;
+}
+
+export async function listSavingsMovements(account?: number): Promise<SavingsMovement[]> {
+  const { data } = await api.get<Paginated<SavingsMovement> | SavingsMovement[]>('/savings/movements/', {
+    params: account ? { account } : undefined,
+  });
+  return Array.isArray(data) ? data : data.results;
+}
+
+export async function createSavingsMovement(payload: {
+  account: number;
+  amount: string;
+  amount_currency?: string;
+  kind: 'deposit' | 'withdrawal';
+  date: string;
+  note?: string;
+}): Promise<SavingsMovement> {
+  const { data } = await api.post<SavingsMovement>('/savings/movements/', payload);
+  return data;
+}
+
 // ---------- Presupuesto ----------
 export interface BudgetCategoryRow {
   category: string;

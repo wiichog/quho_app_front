@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Card, Loading, ScreenContainer, Text } from '@/components';
@@ -31,6 +32,7 @@ interface EditItem {
 }
 
 export default function FinancesScreen() {
+  const router = useRouter();
   const month = useMemo(() => apiMonth(), []);
   const code = useAuthStore((s) => s.profile?.currency) || 'MXN';
   const [segment, setSegment] = useState<Segment>('incomes');
@@ -94,6 +96,22 @@ export default function FinancesScreen() {
           />
         </Card>
       )}
+
+      {/* Acceso a cuentas de ahorro */}
+      <Pressable onPress={() => router.push('/(app)/savings')}>
+        <Card style={styles.savingsLink}>
+          <View style={styles.savingsIcon}>
+            <MaterialIcons name="savings" size={22} color={colors.teal} />
+          </View>
+          <View style={styles.flex}>
+            <Text variant="h5">Cuentas de ahorro</Text>
+            <Text variant="bodySmall" color={colors.gray500}>
+              Aparta dinero y sigue tus metas
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={22} color={colors.gray400} />
+        </Card>
+      </Pressable>
 
       {/* Segmentos */}
       <View style={styles.segment}>
@@ -396,6 +414,15 @@ const styles = StyleSheet.create({
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xxs },
   track: { height: 8, borderRadius: 4, backgroundColor: colors.gray100, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
+  savingsLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
+  savingsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.tealPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   segment: {
     flexDirection: 'row',
     backgroundColor: colors.gray100,

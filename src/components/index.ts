@@ -8,3 +8,4 @@ export { ScreenContainer } from './ScreenContainer';
 export { Loading } from './Loading';
 export { EmptyState } from './EmptyState';
 export { TransactionRow } from './TransactionRow';
+export { LockScreen } from './LockScreen';

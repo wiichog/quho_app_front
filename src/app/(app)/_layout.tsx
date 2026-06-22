@@ -1,8 +1,13 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { LockScreen } from '@/components';
+import { useAuthStore } from '@/store/authStore';
 import { colors, fonts } from '@/theme';
 
 export default function AppTabsLayout() {
+  const locked = useAuthStore((s) => s.locked);
+  if (locked) return <LockScreen />;
+
   return (
     <Tabs
       screenOptions={{
@@ -68,6 +73,7 @@ export default function AppTabsLayout() {
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="change-password" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
+      <Tabs.Screen name="savings" options={{ href: null }} />
     </Tabs>
   );
 }

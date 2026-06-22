@@ -1,10 +1,16 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Loading, Text } from '@/components';
-import { useDeleteTransaction, useTransaction } from '@/features/transactions/hooks';
-import { colorForCategory, colors, spacing } from '@/theme';
+import { useCategories } from '@/features/finances/hooks';
+import {
+  useDeleteTransaction,
+  useTransaction,
+  useUpdateTransaction,
+} from '@/features/transactions/hooks';
+import { colorForCategory, colors, radius, spacing } from '@/theme';
 import { dateShort } from '@/utils/formatters';
 import { moneyText } from '@/utils/money';
 
@@ -14,9 +20,20 @@ export default function TransactionDetailScreen() {
   const txId = Number(id);
   const query = useTransaction(txId);
   const del = useDeleteTransaction();
+  const update = useUpdateTransaction();
+  const categories = useCategories();
+  const [showCategories, setShowCategories] = useState(false);
 
   const tx = query.data;
   const isIncome = tx?.transaction_type === 'income';
+  const isExpense = tx?.transaction_type === 'expense';
+
+  const changeCategory = (categoryId: number) => {
+    update.mutate(
+      { id: txId, payload: { category: categoryId } },
+      { onSuccess: () => setShowCategories(false) },
+    );
+  };
 
   const confirmDelete = () => {
     Alert.alert('Eliminar movimiento', '¿Seguro que deseas eliminar este movimiento?', [
@@ -75,12 +92,22 @@ export default function TransactionDetailScreen() {
             <Row label="Estado" value={tx.status ?? '—'} />
           </Card>
 
+          {isExpense ? (
+            <Button
+              title="Cambiar categoría"
+              variant="outline"
+              icon="category"
+              onPress={() => setShowCategories(true)}
+              loading={update.isPending}
+              style={{ marginTop: spacing.xl }}
+            />
+          ) : null}
           <Button
             title="Editar movimiento"
             variant="outline"
             icon="edit"
             onPress={() => router.push(`/(app)/transactions/add?id=${txId}`)}
-            style={{ marginTop: spacing.xl }}
+            style={{ marginTop: isExpense ? spacing.sm : spacing.xl }}
           />
           <Button
             title="Eliminar movimiento"
@@ -92,6 +119,29 @@ export default function TransactionDetailScreen() {
           />
         </View>
       )}
+
+      <Modal visible={showCategories} animationType="slide" transparent onRequestClose={() => setShowCategories(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowCategories(false)} />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <Text variant="h4" style={styles.modalTitle}>
+            Cambiar categoría
+          </Text>
+          <FlatList
+            data={categories.data ?? []}
+            keyExtractor={(c) => String(c.id)}
+            renderItem={({ item }) => (
+              <Pressable style={styles.catItem} onPress={() => changeCategory(item.id)}>
+                <View style={[styles.catDot, { backgroundColor: item.color ?? colorForCategory(item.display_name) }]} />
+                <Text variant="bodyLarge" style={{ flex: 1 }}>
+                  {item.display_name}
+                </Text>
+                {tx?.category === item.id ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
+              </Pressable>
+            )}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -127,4 +177,17 @@ const styles = StyleSheet.create({
   icon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm },
   divider: { height: 1, backgroundColor: colors.gray100 },
+  modalBackdrop: { flex: 1, backgroundColor: '#00000055' },
+  modalSheet: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    maxHeight: '70%',
+  },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.gray300, alignSelf: 'center', marginTop: spacing.sm },
+  modalTitle: { marginVertical: spacing.md },
+  catItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
+  catDot: { width: 14, height: 14, borderRadius: 7 },
 });
