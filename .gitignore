@@ -18,6 +18,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# EAS submit credentials (NUNCA commitear). El README sí se trackea.
+credentials/*
+!credentials/README.md
+
 # Metro
 .metro-health-check*
 

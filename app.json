@@ -8,9 +8,12 @@
     "scheme": "quho",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.quhoapp.app",
+      "supportsTablet": true
     },
     "android": {
+      "package": "com.quhoapp.app",
       "adaptiveIcon": {
         "backgroundColor": "#0D9488",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
