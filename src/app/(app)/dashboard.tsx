@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
 import {
@@ -23,11 +23,23 @@ import { amountOf } from '@/utils/money';
 export default function DashboardScreen() {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
-  const month = useMemo(() => apiMonth(), []);
+  const [monthDate, setMonthDate] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const month = apiMonth(monthDate);
+  const isCurrentMonth = month === apiMonth(new Date());
 
   const budget = useBudgetSummary(month);
   const plan = usePlan();
-  const recent = useTransactions({ limit: 5 });
+  const recent = useTransactions({ month, limit: 5 });
+
+  const prevMonth = () =>
+    setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const nextMonth = () => {
+    if (isCurrentMonth) return;
+    setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+  };
 
   const onRefresh = () => {
     budget.refetch();
@@ -66,7 +78,7 @@ export default function DashboardScreen() {
           </Text>
           <Text variant="h3">{profile?.first_name || 'usuario'} 👋</Text>
         </View>
-        <Pressable onPress={() => router.push('/(app)/profile')} style={styles.bell}>
+        <Pressable onPress={() => router.push('/(app)/notifications')} style={styles.bell}>
           <MaterialIcons name="notifications-none" size={24} color={colors.gray700} />
         </Pressable>
       </View>
@@ -78,9 +90,21 @@ export default function DashboardScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
-        <Text variant="caption" color={colors.tealLight}>
-          BALANCE DEL MES · {monthYear(new Date()).toUpperCase()}
-        </Text>
+        <View style={styles.monthRow}>
+          <Pressable onPress={prevMonth} hitSlop={10}>
+            <MaterialIcons name="chevron-left" size={22} color={colors.tealLight} />
+          </Pressable>
+          <Text variant="caption" color={colors.tealLight}>
+            BALANCE · {monthYear(monthDate).toUpperCase()}
+          </Text>
+          <Pressable onPress={nextMonth} hitSlop={10} disabled={isCurrentMonth}>
+            <MaterialIcons
+              name="chevron-right"
+              size={22}
+              color={isCurrentMonth ? 'transparent' : colors.tealLight}
+            />
+          </Pressable>
+        </View>
         <Text variant="numberLarge" color={colors.white} style={styles.heroBalance}>
           {currency(net, code)}
         </Text>
@@ -287,6 +311,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   hero: { borderRadius: radius.lg, padding: spacing.lg },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heroBalance: { marginVertical: spacing.xs },
   heroRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
   heroStat: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flex: 1 },

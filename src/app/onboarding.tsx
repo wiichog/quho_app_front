@@ -17,7 +17,7 @@ import {
   sendOnboardingMessage,
   startOnboarding,
 } from '@/api/onboarding';
-import { Button, Text } from '@/components';
+import { Button, OwlMark, Text } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { colors, radius, spacing, text } from '@/theme';
 
@@ -86,6 +86,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
+        <OwlMark size={38} />
         <View style={styles.flex}>
           <Text variant="h3">Configura tu presupuesto</Text>
           <Text variant="bodySmall" color={colors.gray500}>
