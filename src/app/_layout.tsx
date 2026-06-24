@@ -19,6 +19,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '@/api/queryClient';
 import { onSessionExpired } from '@/api/tokenStorage';
+import { ErrorBoundary } from '@/components';
+import { ReportProvider } from '@/features/report/ReportProvider';
 import { useAuthStore } from '@/store/authStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -57,7 +59,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <StatusBar style="dark" />
-          <RootNavigator />
+          <ReportProvider>
+            <ErrorBoundary>
+              <RootNavigator />
+            </ErrorBoundary>
+          </ReportProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Button, Card, ScreenContainer, Text } from '@/components';
 import { usePlan } from '@/features/finances/hooks';
+import { useReport } from '@/features/report/ReportProvider';
 import { useUpdateProfile } from '@/features/me/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { colors, radius, spacing, text } from '@/theme';
@@ -14,6 +15,7 @@ export default function ProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
   const plan = usePlan();
   const signOut = useAuthStore((s) => s.signOut);
+  const { openReport } = useReport();
   const biometricsEnabled = useAuthStore((s) => s.biometricsEnabled);
   const setBiometricsEnabled = useAuthStore((s) => s.setBiometricsEnabled);
   const [editing, setEditing] = useState(false);
@@ -129,6 +131,8 @@ export default function ProfileScreen() {
         </View>
         <Divider />
         <MenuRow icon="help-outline" label="Ayuda" onPress={() => Alert.alert('Ayuda', 'soporte@quho.app')} />
+        <Divider />
+        <MenuRow icon="bug-report" label="Reportar un problema" onPress={openReport} />
       </Card>
 
       <Button
@@ -138,6 +142,17 @@ export default function ProfileScreen() {
         onPress={confirmLogout}
         style={{ marginTop: spacing.xl }}
       />
+
+      <Pressable
+        style={styles.deleteRow}
+        onPress={() => router.push('/(app)/delete-account')}
+        hitSlop={8}
+      >
+        <MaterialIcons name="delete-outline" size={18} color={colors.red} />
+        <Text variant="bodyMedium" color={colors.red}>
+          Eliminar cuenta
+        </Text>
+      </Pressable>
 
       <EditProfileModal visible={editing} onClose={() => setEditing(false)} />
     </ScreenContainer>
@@ -280,6 +295,14 @@ const styles = StyleSheet.create({
   track: { height: 6, borderRadius: 3, backgroundColor: colors.gray100, overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3, backgroundColor: colors.teal },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
+  deleteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
   menuDivider: { height: 1, backgroundColor: colors.gray100, marginLeft: spacing.md + 22 + spacing.sm },
   backdrop: { flex: 1, backgroundColor: '#00000055' },
   sheet: {

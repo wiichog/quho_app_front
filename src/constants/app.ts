@@ -88,6 +88,6 @@ export const ERROR_MESSAGES = {
 export const LINKS = {
   privacy: 'https://quho.app/privacy',
   terms: 'https://quho.app/terms',
-  help: 'https://quho.app/help',
+  help: 'https://quho.app/support',
   contactEmail: 'soporte@quho.app',
 } as const;

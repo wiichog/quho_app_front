@@ -9,5 +9,7 @@ export { Loading } from './Loading';
 export { EmptyState } from './EmptyState';
 export { TransactionRow } from './TransactionRow';
 export { LockScreen } from './LockScreen';
+export { ReportErrorSheet } from './ReportErrorSheet';
+export { ErrorBoundary } from './ErrorBoundary';
 export { OwlLogo, OwlMark } from './OwlLogo';
 export { Skeleton, ListSkeleton, DashboardSkeleton } from './Skeleton';

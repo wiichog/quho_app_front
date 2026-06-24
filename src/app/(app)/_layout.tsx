@@ -72,6 +72,7 @@ export default function AppTabsLayout() {
       <Tabs.Screen name="subscription" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="change-password" options={{ href: null }} />
+      <Tabs.Screen name="delete-account" options={{ href: null }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="savings" options={{ href: null }} />
     </Tabs>
