@@ -1,4 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
         <Divider />
         <MenuRow icon="help-outline" label="Ayuda" onPress={() => Alert.alert('Ayuda', 'soporte@quho.app')} />
         <Divider />
-        <MenuRow icon="bug-report" label="Reportar un problema" onPress={openReport} />
+        <MenuRow community icon="bug-outline" label="Reportar un problema" onPress={openReport} />
       </Card>
 
       <Button
@@ -185,14 +185,30 @@ function MenuRow({
   icon,
   label,
   onPress,
+  community = false,
 }: {
-  icon: keyof typeof MaterialIcons.glyphMap;
+  // `community` usa MaterialCommunityIcons (p. ej. "bug-outline", un bug nítido);
+  // por defecto MaterialIcons. Por eso el tipo es string laxo + cast en el render.
+  icon: string;
   label: string;
   onPress: () => void;
+  community?: boolean;
 }) {
   return (
     <Pressable style={styles.menuRow} onPress={onPress}>
-      <MaterialIcons name={icon} size={22} color={colors.gray600} />
+      {community ? (
+        <MaterialCommunityIcons
+          name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
+          size={22}
+          color={colors.gray600}
+        />
+      ) : (
+        <MaterialIcons
+          name={icon as keyof typeof MaterialIcons.glyphMap}
+          size={22}
+          color={colors.gray600}
+        />
+      )}
       <Text variant="bodyLarge" style={styles.flex}>
         {label}
       </Text>
