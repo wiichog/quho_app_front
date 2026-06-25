@@ -2,8 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Text, TextField } from '@/components';
+import { AuthScreen, Button, Text, TextField } from '@/components';
 import { useVerifyEmail } from '@/features/auth/hooks';
 import { colors, spacing } from '@/theme';
 
@@ -15,73 +14,80 @@ export default function VerifyEmailScreen() {
 
   const onVerify = () => {
     verify.mutate(token.trim(), {
-      onSuccess: () =>
-        router.replace({ pathname: '/(auth)/login' }),
+      onSuccess: () => router.replace({ pathname: '/(auth)/login' }),
     });
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.content}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.back}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.gray700} />
-        </Pressable>
+    <AuthScreen>
+      <Pressable onPress={() => router.back()} hitSlop={8} style={styles.back}>
+        <MaterialIcons name="arrow-back" size={24} color={colors.white} />
+      </Pressable>
 
-        <View style={styles.iconCircle}>
-          <MaterialIcons name="mark-email-read" size={36} color={colors.teal} />
-        </View>
-
-        <Text variant="h2" center>
-          Verifica tu email
-        </Text>
-        <Text variant="bodyMedium" color={colors.gray500} center style={styles.subtitle}>
-          Enviamos un código de verificación a{'\n'}
-          <Text variant="bodyMedium" color={colors.gray700}>
-            {email ?? 'tu correo'}
-          </Text>
-        </Text>
-
-        {verify.isError ? (
-          <View style={styles.errorBox}>
-            <Text variant="bodySmall" color={colors.red}>
-              {verify.error?.message}
-            </Text>
-          </View>
-        ) : null}
-
-        <TextField
-          label="Código de verificación"
-          placeholder="Pega aquí el código del correo"
-          autoCapitalize="none"
-          value={token}
-          onChangeText={setToken}
-        />
-
-        <Button
-          title="Verificar"
-          onPress={onVerify}
-          loading={verify.isPending}
-          disabled={token.trim().length === 0}
-        />
+      <View style={styles.iconCircle}>
+        <MaterialIcons name="mark-email-read" size={36} color={colors.purple} />
       </View>
-    </SafeAreaView>
+
+      <Text variant="h2" color={colors.white} center style={styles.title}>
+        Verifica tu email
+      </Text>
+      <Text variant="caption" color="rgba(255,255,255,0.5)" center style={styles.subtitle}>
+        Enviamos un código de verificación a{'\n'}
+        <Text variant="caption" color={colors.white}>
+          {email ?? 'tu correo'}
+        </Text>
+      </Text>
+
+      {verify.isError ? (
+        <View style={styles.errorBox}>
+          <Text variant="bodySmall" color="#FCA5A5">
+            {verify.error?.message}
+          </Text>
+        </View>
+      ) : null}
+
+      <TextField
+        tone="dark"
+        label="Código de verificación"
+        placeholder="Pega aquí el código del correo"
+        autoCapitalize="none"
+        value={token}
+        onChangeText={setToken}
+      />
+
+      <Button
+        title="Verificar"
+        variant="accent"
+        onPress={onVerify}
+        loading={verify.isPending}
+        disabled={token.trim().length === 0}
+      />
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.gray50 },
-  content: { flex: 1, padding: spacing.lg, justifyContent: 'center' },
-  back: { position: 'absolute', top: spacing.lg, left: spacing.lg },
+  back: { marginBottom: spacing.md, alignSelf: 'flex-start' },
   iconCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.tealPale,
+    backgroundColor: 'rgba(94,14,215,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(94,14,215,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
+  title: { textTransform: 'uppercase', letterSpacing: 1 },
   subtitle: { marginTop: spacing.xs, marginBottom: spacing.xl },
-  errorBox: { backgroundColor: colors.redPale, borderRadius: 12, padding: spacing.sm, marginBottom: spacing.md },
+  errorBox: {
+    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderColor: 'rgba(239,68,68,0.4)',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
 });
