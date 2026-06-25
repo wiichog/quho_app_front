@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, DimensionValue, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius as themeRadius, spacing } from '@/theme';
 import { Card } from './Card';
@@ -15,7 +15,7 @@ export function Skeleton({
   radius?: number;
   style?: ViewStyle;
 }) {
-  const opacity = useRef(new Animated.Value(0.5)).current;
+  const [opacity] = useState(() => new Animated.Value(0.5));
 
   useEffect(() => {
     const loop = Animated.loop(

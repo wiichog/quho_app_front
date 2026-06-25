@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getInsights, getScore } from '@/api/ai';
 import { Card, EmptyState, Loading, Text } from '@/components';
-import { colors, radius, spacing } from '@/theme';
+import { colors, spacing } from '@/theme';
 import { apiMonth, monthYear } from '@/utils/formatters';
 
 function scoreColor(score: number): string {

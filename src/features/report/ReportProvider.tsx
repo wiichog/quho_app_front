@@ -38,7 +38,9 @@ const SHAKE_DEBOUNCE_MS = 3000;
 export function ReportProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
-  pathnameRef.current = pathname;
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   const [visible, setVisible] = useState(false);
   const [screen, setScreen] = useState('');
