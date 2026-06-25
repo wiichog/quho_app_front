@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { colors, radius, spacing, text } from '@/theme';
 
-type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'accent';
 type Size = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -76,6 +76,8 @@ function getPalette(variant: Variant, disabled: boolean) {
   switch (variant) {
     case 'primary':
       return { bg: colors.teal, fg: colors.white, border: 'transparent' };
+    case 'accent':
+      return { bg: colors.purple, fg: colors.white, border: 'transparent' };
     case 'secondary':
       return { bg: colors.darkNavy, fg: colors.white, border: 'transparent' };
     case 'outline':

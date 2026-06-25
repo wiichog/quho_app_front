@@ -16,6 +16,8 @@ export interface TextFieldProps extends TextInputProps {
   leftIcon?: keyof typeof MaterialIcons.glyphMap;
   /** Activa el botón de mostrar/ocultar para contraseñas. */
   password?: boolean;
+  /** 'dark' = campo sobre fondo oscuro (logins editoriales con acento morado). */
+  tone?: 'light' | 'dark';
 }
 
 export function TextField({
@@ -23,28 +25,40 @@ export function TextField({
   error,
   leftIcon,
   password = false,
+  tone = 'light',
   style,
   ...rest
 }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(password);
 
-  const borderColor = error ? colors.red : focused ? colors.teal : colors.gray200;
+  const dark = tone === 'dark';
+  const accent = dark ? colors.purple : colors.teal;
+  const idleBorder = dark ? 'rgba(255,255,255,0.15)' : colors.gray200;
+  const borderColor = error ? colors.red : focused ? accent : idleBorder;
+  const fieldBg = dark ? 'rgba(255,255,255,0.06)' : colors.white;
+  const inputColor = dark ? colors.white : colors.gray900;
+  const placeholderColor = dark ? 'rgba(255,255,255,0.3)' : colors.gray400;
+  const iconColor = dark ? 'rgba(255,255,255,0.4)' : colors.gray400;
 
   return (
     <View style={styles.wrapper}>
       {label ? (
-        <Text variant="caption" color={colors.gray600} style={styles.label}>
+        <Text
+          variant="caption"
+          color={dark ? 'rgba(255,255,255,0.5)' : colors.gray600}
+          style={[styles.label, dark ? styles.labelDark : null]}
+        >
           {label}
         </Text>
       ) : null}
-      <View style={[styles.field, { borderColor }]}>
+      <View style={[styles.field, { borderColor, backgroundColor: fieldBg }]}>
         {leftIcon ? (
-          <MaterialIcons name={leftIcon} size={20} color={colors.gray400} style={styles.leftIcon} />
+          <MaterialIcons name={leftIcon} size={20} color={iconColor} style={styles.leftIcon} />
         ) : null}
         <TextInput
-          style={[styles.input, text.bodyMedium(colors.gray900), style]}
-          placeholderTextColor={colors.gray400}
+          style={[styles.input, text.bodyMedium(inputColor), style]}
+          placeholderTextColor={placeholderColor}
           secureTextEntry={hidden}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -55,7 +69,7 @@ export function TextField({
             <MaterialIcons
               name={hidden ? 'visibility-off' : 'visibility'}
               size={20}
-              color={colors.gray400}
+              color={iconColor}
             />
           </Pressable>
         ) : null}
@@ -72,10 +86,10 @@ export function TextField({
 const styles = StyleSheet.create({
   wrapper: { marginBottom: spacing.md },
   label: { marginBottom: spacing.xxs },
+  labelDark: { textTransform: 'uppercase', letterSpacing: 1 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
     borderWidth: 1.5,
     borderRadius: radius.xs,
     paddingHorizontal: spacing.md,

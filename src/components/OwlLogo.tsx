@@ -27,6 +27,28 @@ export function OwlMark({ size = 32 }: { size?: number }) {
   );
 }
 
+/** Marca minimalista editorial (anillo + punto en morado). Para logins/marketing. */
+export function MarkDot({ size = 40 }: { size?: number }) {
+  const dot = Math.round(size * 0.3);
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: 2,
+        borderColor: colors.purple,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <View
+        style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: colors.purple }}
+      />
+    </View>
+  );
+}
+
 interface OwlLogoProps {
   size?: number;
   wordmark?: boolean;

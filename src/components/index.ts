@@ -11,5 +11,6 @@ export { TransactionRow } from './TransactionRow';
 export { LockScreen } from './LockScreen';
 export { ReportErrorSheet } from './ReportErrorSheet';
 export { ErrorBoundary } from './ErrorBoundary';
-export { OwlLogo, OwlMark } from './OwlLogo';
+export { OwlLogo, OwlMark, MarkDot } from './OwlLogo';
+export { AuthScreen } from './AuthScreen';
 export { Skeleton, ListSkeleton, DashboardSkeleton } from './Skeleton';

@@ -69,7 +69,8 @@
           "photosPermission": "QUHO accede a tus fotos solo para que puedas adjuntar una captura a tu reporte de un problema."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

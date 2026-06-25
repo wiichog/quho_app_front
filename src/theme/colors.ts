@@ -7,11 +7,15 @@ export const colors = {
   navy: '#334155',
   mediumNavy: '#475569',
 
-  // Accent - Teal
+  // Accent - Teal (acento del PRODUCTO)
   tealDark: '#0D9488',
   teal: '#14B8A6',
   tealLight: '#5EEAD4',
   tealPale: '#CCFBF1',
+
+  // Editorial - Purple (solo marketing/landing y logins)
+  purple: '#5E0ED7',
+  purpleDark: '#4A0BAA',
 
   // Functional - Success
   green: '#10B981',
