@@ -13,4 +13,5 @@ export { ReportErrorSheet } from './ReportErrorSheet';
 export { ErrorBoundary } from './ErrorBoundary';
 export { OwlLogo, OwlMark, MarkDot } from './OwlLogo';
 export { AuthScreen } from './AuthScreen';
+export { ScreenHeader, SectionHeader } from './headers';
 export { Skeleton, ListSkeleton, DashboardSkeleton } from './Skeleton';

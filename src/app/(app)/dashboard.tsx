@@ -9,6 +9,7 @@ import {
   EmptyState,
   ListSkeleton,
   ScreenContainer,
+  SectionHeader,
   Skeleton,
   Text,
   TransactionRow,
@@ -273,29 +274,6 @@ function QuickAction({
         {label}
       </Text>
     </Pressable>
-  );
-}
-
-function SectionHeader({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text variant="h4">{title}</Text>
-      {actionLabel && onAction ? (
-        <Pressable onPress={onAction} hitSlop={8}>
-          <Text variant="caption" color={colors.teal}>
-            {actionLabel}
-          </Text>
-        </Pressable>
-      ) : null}
-    </View>
   );
 }
 

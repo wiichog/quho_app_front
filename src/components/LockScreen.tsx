@@ -41,7 +41,12 @@ export function LockScreen() {
           <View style={styles.iconCircle}>
             <MaterialIcons name="lock" size={40} color={colors.white} />
           </View>
-          <Text variant="h2" color={colors.white} center>
+          <Text
+            variant="h2"
+            color={colors.white}
+            center
+            style={{ textTransform: 'uppercase', letterSpacing: 1 }}
+          >
             QUHO está bloqueado
           </Text>
           <Text variant="bodyMedium" color={colors.tealLight} center style={styles.subtitle}>

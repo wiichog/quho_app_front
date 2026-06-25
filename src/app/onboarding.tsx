@@ -88,7 +88,9 @@ export default function OnboardingScreen() {
       <View style={styles.header}>
         <OwlMark size={38} />
         <View style={styles.flex}>
-          <Text variant="h3">Configura tu presupuesto</Text>
+          <Text variant="h3" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Configura tu presupuesto
+          </Text>
           <Text variant="bodySmall" color={colors.gray500}>
             Cuéntale a tu asesor sobre tus ingresos y gastos
           </Text>

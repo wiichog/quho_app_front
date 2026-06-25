@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
-import { Button, Card, ScreenContainer, Text } from '@/components';
+import { Button, Card, ScreenContainer, ScreenHeader, Text } from '@/components';
 import { usePlan } from '@/features/finances/hooks';
 import { useReport } from '@/features/report/ReportProvider';
 import { useUpdateProfile } from '@/features/me/hooks';
@@ -54,9 +54,9 @@ export default function ProfileScreen() {
 
   return (
     <ScreenContainer scroll>
-      <Text variant="h2" style={{ marginBottom: spacing.lg }}>
-        Perfil
-      </Text>
+      <View style={{ marginBottom: spacing.lg }}>
+        <ScreenHeader title="Perfil" />
+      </View>
 
       <Card style={styles.headerCard}>
         <View style={styles.avatar}>

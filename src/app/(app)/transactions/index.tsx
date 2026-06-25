@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, ListSkeleton, Text, TransactionRow } from '@/components';
+import { EmptyState, ListSkeleton, ScreenHeader, Text, TransactionRow } from '@/components';
 import type { TransactionType } from '@/api/transactions';
 import { useInfiniteTransactions } from '@/features/transactions/hooks';
 import { colors, radius, shadow, spacing, text } from '@/theme';
@@ -64,12 +64,10 @@ export default function TransactionsListScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text variant="h2">Movimientos</Text>
-        {total != null ? (
-          <Text variant="bodySmall" color={colors.gray500}>
-            {total} en total
-          </Text>
-        ) : null}
+        <ScreenHeader
+          title="Movimientos"
+          subtitle={total != null ? `${total} en total` : undefined}
+        />
       </View>
 
       <View style={styles.searchRow}>

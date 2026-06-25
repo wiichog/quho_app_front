@@ -77,7 +77,9 @@ export default function AIChatScreen() {
           <View style={styles.aiDot}>
             <MaterialIcons name="auto-awesome" size={16} color={colors.white} />
           </View>
-          <Text variant="h4">Asesor IA</Text>
+          <Text variant="h4" style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+            Asesor IA
+          </Text>
         </View>
         <View style={{ width: 24 }} />
       </View>

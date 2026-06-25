@@ -44,7 +44,9 @@ export default function ChangePasswordScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <MaterialIcons name="arrow-back" size={24} color={colors.gray700} />
         </Pressable>
-        <Text variant="h4">Cambiar contraseña</Text>
+        <Text variant="h4" style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+          Cambiar contraseña
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 

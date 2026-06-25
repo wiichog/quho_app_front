@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Card, Loading, ScreenContainer, Text } from '@/components';
+import { Card, Loading, ScreenContainer, ScreenHeader, Text } from '@/components';
 import {
   useBudgetSummary,
   useCompleteGoal,
@@ -63,10 +63,9 @@ export default function FinancesScreen() {
 
   return (
     <ScreenContainer scroll refreshing={budget.isRefetching} onRefresh={budget.refetch}>
-      <Text variant="h2">Finanzas</Text>
-      <Text variant="bodyMedium" color={colors.gray500} style={{ marginBottom: spacing.lg }}>
-        {monthYear(new Date())}
-      </Text>
+      <View style={{ marginBottom: spacing.lg }}>
+        <ScreenHeader title="Finanzas" subtitle={monthYear(new Date())} />
+      </View>
 
       {/* Resumen de presupuesto */}
       {budget.isLoading ? (

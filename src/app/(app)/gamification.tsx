@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { Card, Loading, ScreenContainer, Text } from '@/components';
+import { Card, Loading, ScreenContainer, ScreenHeader, SectionHeader, Text } from '@/components';
 import {
   useActiveMissions,
   useBadges,
@@ -30,9 +30,9 @@ export default function GamificationScreen() {
 
   return (
     <ScreenContainer scroll refreshing={summary.isRefetching} onRefresh={onRefresh}>
-      <Text variant="h2" style={{ marginBottom: spacing.lg }}>
-        Logros
-      </Text>
+      <View style={{ marginBottom: spacing.lg }}>
+        <ScreenHeader title="Logros" />
+      </View>
 
       {/* Nivel + puntos */}
       {summary.isLoading ? (
@@ -112,9 +112,7 @@ export default function GamificationScreen() {
       </Card>
 
       {/* Desafíos */}
-      <Text variant="h4" style={styles.sectionTitle}>
-        Desafíos activos
-      </Text>
+      <SectionHeader title="Desafíos activos" />
       {missions.isLoading ? (
         <Card><Loading /></Card>
       ) : (missions.data ?? []).length === 0 ? (
@@ -143,9 +141,7 @@ export default function GamificationScreen() {
       )}
 
       {/* Insignias */}
-      <Text variant="h4" style={styles.sectionTitle}>
-        Insignias
-      </Text>
+      <SectionHeader title="Insignias" />
       <View style={styles.badgeGrid}>
         {[...(badges.data?.unlocked ?? []), ...(badges.data?.locked ?? [])].slice(0, 8).map((b) => (
           <View key={b.id} style={styles.badgeItem}>

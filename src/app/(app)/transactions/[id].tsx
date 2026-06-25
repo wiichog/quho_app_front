@@ -52,7 +52,9 @@ export default function TransactionDetailScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <MaterialIcons name="close" size={26} color={colors.gray700} />
         </Pressable>
-        <Text variant="h4">Detalle</Text>
+        <Text variant="h4" style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+          Detalle
+        </Text>
         <View style={{ width: 26 }} />
       </View>
 

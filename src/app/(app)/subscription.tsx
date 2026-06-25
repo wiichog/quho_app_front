@@ -41,7 +41,9 @@ export default function SubscriptionScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <MaterialIcons name="arrow-back" size={24} color={colors.gray700} />
         </Pressable>
-        <Text variant="h4">Suscripción</Text>
+        <Text variant="h4" style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+          Suscripción
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 

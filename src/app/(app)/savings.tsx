@@ -33,7 +33,9 @@ export default function SavingsScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <MaterialIcons name="arrow-back" size={24} color={colors.gray700} />
         </Pressable>
-        <Text variant="h4">Ahorros</Text>
+        <Text variant="h4" style={{ textTransform: 'uppercase', letterSpacing: 1 }}>
+          Ahorros
+        </Text>
         <Pressable onPress={() => setShowNewAccount(true)} hitSlop={8}>
           <MaterialIcons name="add" size={26} color={colors.teal} />
         </Pressable>
