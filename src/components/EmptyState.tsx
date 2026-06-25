@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  title: { marginBottom: spacing.xxs },
+  title: { marginBottom: spacing.xxs, textTransform: 'uppercase', letterSpacing: 1 },
   action: { marginTop: spacing.lg },
 });

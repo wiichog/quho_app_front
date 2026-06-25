@@ -62,7 +62,7 @@ export function Button({
       ) : (
         <View style={styles.row}>
           {icon ? <MaterialIcons name={icon} size={20} color={palette.fg} /> : null}
-          <Text style={text.button(palette.fg)}>{title}</Text>
+          <Text style={[text.button(palette.fg), styles.label]}>{title}</Text>
         </View>
       )}
     </Pressable>
@@ -103,4 +103,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  label: { textTransform: 'uppercase', letterSpacing: 1 },
 });

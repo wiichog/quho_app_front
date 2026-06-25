@@ -21,7 +21,12 @@ export default function AppTabsLayout() {
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontFamily: fonts.interMedium, fontSize: 11 },
+        tabBarLabelStyle: {
+          fontFamily: fonts.interSemiBold,
+          fontSize: 10,
+          letterSpacing: 0.8,
+          textTransform: 'uppercase',
+        },
       }}
     >
       <Tabs.Screen

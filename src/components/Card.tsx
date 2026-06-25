@@ -12,7 +12,7 @@ export function Card({ padded = true, elevated = false, style, ...rest }: CardPr
       style={[
         styles.card,
         padded && { padding: spacing.md },
-        elevated ? shadow.elevated : shadow.card,
+        elevated ? shadow.elevated : null,
         style,
       ]}
       {...rest}
@@ -20,11 +20,12 @@ export function Card({ padded = true, elevated = false, style, ...rest }: CardPr
   );
 }
 
+// Look editorial: tarjeta plana, esquina sutil y borde nítido (sin sombra por defecto).
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.gray100,
+    borderColor: colors.gray200,
   },
 });
