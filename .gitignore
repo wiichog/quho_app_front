@@ -3,6 +3,12 @@
 # dependencies
 node_modules/
 
+# package-lock.json NO se commitea a propósito: el lock generado en Windows
+# resuelve un arbol distinto al de macOS/Linux y rompe `npm ci` en EAS
+# (Missing @react-native/metro-config, @testing-library/dom, etc.).
+# Sin lock, EAS usa `npm install` y resuelve en su propia maquina. Ver eas builds 76ad62a4 / c7062ab5.
+package-lock.json
+
 # Expo
 .expo/
 dist/
