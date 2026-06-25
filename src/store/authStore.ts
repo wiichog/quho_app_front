@@ -92,6 +92,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         biometricsEnabled,
         locked: biometricsEnabled, // requiere desbloqueo en arranque en frío
       });
+      // Re-registrar el dispositivo para push en arranque autenticado.
+      import('@/lib/push').then((m) => m.registerForPush()).catch(() => undefined);
     } catch {
       await clearTokens();
       set({ status: 'unauthenticated', user: null, profile: null });
@@ -110,6 +112,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     // Cargar perfil completo en segundo plano.
     get().refreshProfile().catch(() => undefined);
+    // Registrar el dispositivo para push (Expo) tras iniciar sesión.
+    import('@/lib/push').then((m) => m.registerForPush()).catch(() => undefined);
   },
 
   signOut: async () => {
