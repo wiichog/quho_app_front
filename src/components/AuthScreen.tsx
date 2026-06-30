@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { ReactNode } from 'react';
 import {
@@ -8,19 +9,25 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, spacing } from '@/theme';
-
-/** Mismo video de la landing (quho.app). Fondo compartido por los logins. */
-const VIDEO_URL =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4';
+import { colors, gradients, radius, spacing } from '@/theme';
 
 /**
- * Scaffold editorial para pantallas de autenticación: video de fondo + velo
- * oscuro + panel translúcido. Mantiene el look de la landing (alto contraste,
- * acento morado). Reutilizable por login, registro, recuperar contraseña, etc.
+ * Loop local del video de la landing (quho.app), empaquetado en el bundle.
+ * Se sirve desde assets — NO se hace streaming remoto: el login no debe depender
+ * de la red para renderizar (un asset remoto pesado congelaba la pantalla de
+ * inicio de sesión en algunos dispositivos / redes).
+ */
+const VIDEO_SOURCE = require('../../assets/video/auth-bg.mp4');
+
+/**
+ * Scaffold editorial para pantallas de autenticación: gradiente de marca (fondo
+ * inmediato) + video local de fondo + velo oscuro + panel translúcido. Mantiene
+ * el look de la landing (alto contraste, acento morado). El gradiente garantiza
+ * un fondo branded al instante aunque el video aún no haya arrancado, por lo que
+ * el login siempre es usable. Reutilizable por login, registro, recuperar, etc.
  */
 export function AuthScreen({ children }: { children: ReactNode }) {
-  const player = useVideoPlayer(VIDEO_URL, (p) => {
+  const player = useVideoPlayer(VIDEO_SOURCE, (p) => {
     p.loop = true;
     p.muted = true;
     p.play();
@@ -28,6 +35,13 @@ export function AuthScreen({ children }: { children: ReactNode }) {
 
   return (
     <View style={styles.root}>
+      <LinearGradient
+        colors={gradients.hero as unknown as [string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       <VideoView
         player={player}
         style={StyleSheet.absoluteFill}
