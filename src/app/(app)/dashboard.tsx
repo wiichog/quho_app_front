@@ -93,16 +93,16 @@ export default function DashboardScreen() {
       >
         <View style={styles.monthRow}>
           <Pressable onPress={prevMonth} hitSlop={10}>
-            <MaterialIcons name="chevron-left" size={22} color={colors.tealLight} />
+            <MaterialIcons name="chevron-left" size={22} color={colors.purpleLight} />
           </Pressable>
-          <Text variant="caption" color={colors.tealLight}>
+          <Text variant="caption" color={colors.purpleLight}>
             BALANCE · {monthYear(monthDate).toUpperCase()}
           </Text>
           <Pressable onPress={nextMonth} hitSlop={10} disabled={isCurrentMonth}>
             <MaterialIcons
               name="chevron-right"
               size={22}
-              color={isCurrentMonth ? 'transparent' : colors.tealLight}
+              color={isCurrentMonth ? 'transparent' : colors.purpleLight}
             />
           </Pressable>
         </View>
@@ -111,9 +111,9 @@ export default function DashboardScreen() {
         </Text>
         <View style={styles.heroRow}>
           <View style={styles.heroStat}>
-            <MaterialIcons name="arrow-downward" size={16} color={colors.tealLight} />
+            <MaterialIcons name="arrow-downward" size={16} color={colors.purpleLight} />
             <View>
-              <Text variant="caption" color={colors.tealLight}>
+              <Text variant="caption" color={colors.purpleLight}>
                 Ingresos
               </Text>
               <Text variant="numberSmall" color={colors.white}>
@@ -125,7 +125,7 @@ export default function DashboardScreen() {
           <View style={styles.heroStat}>
             <MaterialIcons name="arrow-upward" size={16} color={colors.orangeLight} />
             <View>
-              <Text variant="caption" color={colors.tealLight}>
+              <Text variant="caption" color={colors.purpleLight}>
                 Gastos
               </Text>
               <Text variant="numberSmall" color={colors.white}>
@@ -268,7 +268,7 @@ function QuickAction({
   return (
     <Pressable onPress={onPress} style={styles.action}>
       <View style={styles.actionIcon}>
-        <MaterialIcons name={icon} size={22} color={colors.teal} />
+        <MaterialIcons name={icon} size={22} color={colors.purple} />
       </View>
       <Text variant="caption" color={colors.gray600} center>
         {label}
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: colors.tealPale,
+    backgroundColor: colors.purplePale,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   catRow: { marginBottom: spacing.md },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xxs },
   progressTrack: { height: 8, borderRadius: 4, backgroundColor: colors.gray100, overflow: 'hidden' },
-  progressFill: { height: 8, borderRadius: 4, backgroundColor: colors.teal },
+  progressFill: { height: 8, borderRadius: 4, backgroundColor: colors.purple },
   recentCard: { overflow: 'hidden' },
   sep: { height: 1, backgroundColor: colors.gray100, marginLeft: spacing.md + 42 + spacing.sm },
   donutRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

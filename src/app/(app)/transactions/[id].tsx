@@ -138,7 +138,7 @@ export default function TransactionDetailScreen() {
                 <Text variant="bodyLarge" style={{ flex: 1 }}>
                   {item.display_name}
                 </Text>
-                {tx?.category === item.id ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
+                {tx?.category === item.id ? <MaterialIcons name="check" size={20} color={colors.purple} /> : null}
               </Pressable>
             )}
           />

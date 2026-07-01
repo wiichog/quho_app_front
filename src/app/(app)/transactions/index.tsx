@@ -119,7 +119,7 @@ export default function TransactionsListScreen() {
           )}
           ListFooterComponent={
             query.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.teal} style={{ marginVertical: spacing.md }} />
+              <ActivityIndicator color={colors.purple} style={{ marginVertical: spacing.md }} />
             ) : null
           }
           ListEmptyComponent={
@@ -152,7 +152,7 @@ function Chip({
   onPress: () => void;
   subtle?: boolean;
 }) {
-  const activeBg = subtle ? colors.darkNavy : colors.teal;
+  const activeBg = subtle ? colors.darkNavy : colors.purple;
   return (
     <Pressable
       onPress={onPress}
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.teal,
+    backgroundColor: colors.purple,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.elevated,

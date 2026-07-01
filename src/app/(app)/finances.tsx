@@ -90,7 +90,7 @@ export default function FinancesScreen() {
             label="Ahorro objetivo"
             actual={amountOf(exec?.net)}
             planned={amountOf(theo?.savings_target)}
-            color={colors.teal}
+            color={colors.purple}
             code={code}
           />
         </Card>
@@ -100,7 +100,7 @@ export default function FinancesScreen() {
       <Pressable onPress={() => router.push('/(app)/savings')}>
         <Card style={styles.savingsLink}>
           <View style={styles.savingsIcon}>
-            <MaterialIcons name="savings" size={22} color={colors.teal} />
+            <MaterialIcons name="savings" size={22} color={colors.purple} />
           </View>
           <View style={styles.flex}>
             <Text variant="h5">Cuentas de ahorro</Text>
@@ -171,8 +171,8 @@ export default function FinancesScreen() {
       ) : null}
 
       <Pressable style={styles.addBtn} onPress={() => { setEditItem(null); setShowAdd(true); }}>
-        <MaterialIcons name="add" size={20} color={colors.teal} />
-        <Text variant="h5" color={colors.teal}>
+        <MaterialIcons name="add" size={20} color={colors.purple} />
+        <Text variant="h5" color={colors.purple}>
           {segment === 'incomes' ? 'Agregar ingreso' : segment === 'fixed' ? 'Agregar gasto fijo' : 'Agregar meta'}
         </Text>
       </Pressable>
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.tealPale,
+    backgroundColor: colors.purplePale,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.xs },
-  segBtnActive: { backgroundColor: colors.teal },
+  segBtnActive: { backgroundColor: colors.purple },
   sep: { height: 1, backgroundColor: colors.gray100, marginHorizontal: spacing.md },
   listRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
   deleteBtn: { padding: 2 },
@@ -444,8 +444,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.sm,
     borderWidth: 1.5,
-    borderColor: colors.tealPale,
-    backgroundColor: colors.tealPale,
+    borderColor: colors.purplePale,
+    backgroundColor: colors.purplePale,
   },
   backdrop: { flex: 1, backgroundColor: '#00000055' },
   sheet: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     height: 52,
   },
   saveBtn: {
-    backgroundColor: colors.teal,
+    backgroundColor: colors.purple,
     borderRadius: radius.xs,
     height: 52,
     alignItems: 'center',

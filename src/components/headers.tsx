@@ -47,7 +47,7 @@ export function SectionHeader({
       </Text>
       {actionLabel && onAction ? (
         <Pressable onPress={onAction} hitSlop={8}>
-          <Text variant="caption" color={colors.teal} style={styles.action}>
+          <Text variant="caption" color={colors.purple} style={styles.action}>
             {actionLabel}
           </Text>
         </Pressable>

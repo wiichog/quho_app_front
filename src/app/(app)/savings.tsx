@@ -37,7 +37,7 @@ export default function SavingsScreen() {
           Ahorros
         </Text>
         <Pressable onPress={() => setShowNewAccount(true)} hitSlop={8}>
-          <MaterialIcons name="add" size={26} color={colors.teal} />
+          <MaterialIcons name="add" size={26} color={colors.purple} />
         </Pressable>
       </View>
 
@@ -57,11 +57,11 @@ export default function SavingsScreen() {
             <Card key={acc.id} style={styles.accountCard}>
               <View style={styles.accountHeader}>
                 <View style={styles.iconCircle}>
-                  <MaterialIcons name="savings" size={22} color={colors.teal} />
+                  <MaterialIcons name="savings" size={22} color={colors.purple} />
                 </View>
                 <View style={styles.flex}>
                   <Text variant="h5">{acc.name}</Text>
-                  <Text variant="numberMedium" color={colors.teal}>
+                  <Text variant="numberMedium" color={colors.purple}>
                     {moneyText(acc.balance_display, code)}
                   </Text>
                 </View>
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.tealPale,
+    backgroundColor: colors.purplePale,
     alignItems: 'center',
     justifyContent: 'center',
   },

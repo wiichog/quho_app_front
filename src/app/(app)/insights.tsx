@@ -87,7 +87,7 @@ export default function InsightsScreen() {
             {(insights.data ?? []).map((ins) => (
               <Card key={ins.id} style={styles.insightCard}>
                 <View style={styles.insightIcon}>
-                  <MaterialIcons name="lightbulb" size={18} color={colors.teal} />
+                  <MaterialIcons name="lightbulb" size={18} color={colors.purple} />
                 </View>
                 <View style={styles.flex}>
                   <Text variant="h5">{ins.title}</Text>
@@ -126,13 +126,13 @@ const styles = StyleSheet.create({
   breakdown: { alignSelf: 'stretch', marginTop: spacing.md, gap: spacing.xs },
   breakdownRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   miniTrack: { width: 120, height: 6, borderRadius: 3, backgroundColor: colors.gray100, overflow: 'hidden' },
-  miniFill: { height: 6, borderRadius: 3, backgroundColor: colors.teal },
+  miniFill: { height: 6, borderRadius: 3, backgroundColor: colors.purple },
   insightCard: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   insightIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.tealPale,
+    backgroundColor: colors.purplePale,
     alignItems: 'center',
     justifyContent: 'center',
   },

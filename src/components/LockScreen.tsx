@@ -35,7 +35,7 @@ export function LockScreen() {
   }, [authenticate]);
 
   return (
-    <LinearGradient colors={gradients.hero as unknown as [string, string]} style={styles.flex}>
+    <LinearGradient colors={gradients.dark as unknown as [string, string]} style={styles.flex}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.content}>
           <View style={styles.iconCircle}>
@@ -49,7 +49,7 @@ export function LockScreen() {
           >
             QUHO está bloqueado
           </Text>
-          <Text variant="bodyMedium" color={colors.tealLight} center style={styles.subtitle}>
+          <Text variant="bodyMedium" color={colors.purpleLight} center style={styles.subtitle}>
             Usa tu huella o rostro para continuar
           </Text>
         </View>

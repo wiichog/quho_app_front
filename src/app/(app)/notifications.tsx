@@ -100,8 +100,8 @@ function Inbox() {
       ListHeaderComponent={
         unread > 0 ? (
           <Pressable style={styles.readAll} onPress={() => readAll.mutate()}>
-            <MaterialIcons name="done-all" size={16} color={colors.teal} />
-            <Text variant="caption" color={colors.teal}>
+            <MaterialIcons name="done-all" size={16} color={colors.purple} />
+            <Text variant="caption" color={colors.purple}>
               Marcar todo como leído ({unread})
             </Text>
           </Pressable>
@@ -123,8 +123,8 @@ function Inbox() {
             style={styles.row}
             onPress={() => isUnread && read.mutate(item.id)}
           >
-            <View style={[styles.icon, { backgroundColor: isUnread ? colors.tealPale : colors.gray100 }]}>
-              <MaterialIcons name={icon} size={20} color={isUnread ? colors.teal : colors.gray400} />
+            <View style={[styles.icon, { backgroundColor: isUnread ? colors.purplePale : colors.gray100 }]}>
+              <MaterialIcons name={icon} size={20} color={isUnread ? colors.purple : colors.gray400} />
             </View>
             <View style={styles.flex}>
               <Text variant="h5" color={isUnread ? colors.gray900 : colors.gray600}>
@@ -218,7 +218,7 @@ function SettingsTab() {
               <Switch
                 value={settings.data![row.key]}
                 onValueChange={(v) => update.mutate({ [row.key]: v })}
-                trackColor={{ true: colors.teal, false: colors.gray300 }}
+                trackColor={{ true: colors.purple, false: colors.gray300 }}
                 thumbColor={colors.white}
               />
             </View>
@@ -266,12 +266,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.xs },
-  segBtnActive: { backgroundColor: colors.teal },
+  segBtnActive: { backgroundColor: colors.purple },
   body: { padding: spacing.lg, flexGrow: 1 },
   readAll: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', marginBottom: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
   icon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.teal },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.purple },
   sep: { height: 1, backgroundColor: colors.gray100 },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
 });

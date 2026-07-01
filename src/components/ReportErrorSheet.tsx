@@ -112,9 +112,9 @@ export function ReportErrorSheet({ visible, onClose, screen, stackTrace }: Props
           <MaterialIcons
             name={attachment ? 'check-circle' : 'add-photo-alternate'}
             size={20}
-            color={attachment ? colors.teal : colors.gray500}
+            color={attachment ? colors.purple : colors.gray500}
           />
-          <Text variant="bodyMedium" color={attachment ? colors.teal : colors.gray600}>
+          <Text variant="bodyMedium" color={attachment ? colors.purple : colors.gray600}>
             {attachment ? 'Captura adjuntada' : 'Adjuntar captura (opcional)'}
           </Text>
           {attachment ? (

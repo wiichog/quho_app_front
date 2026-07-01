@@ -22,7 +22,7 @@ export function EmptyState({
   return (
     <View style={styles.container}>
       <View style={styles.iconCircle}>
-        <MaterialIcons name={icon} size={36} color={colors.teal} />
+        <MaterialIcons name={icon} size={36} color={colors.purple} />
       </View>
       <Text variant="h4" center style={styles.title}>
         {title}
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.tealPale,
+    backgroundColor: colors.purplePale,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,

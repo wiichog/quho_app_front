@@ -104,7 +104,7 @@ export default function OnboardingScreen() {
 
       {start.isPending ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.teal} />
+          <ActivityIndicator color={colors.purple} />
           <Text variant="bodyMedium" color={colors.gray500} style={{ marginTop: spacing.sm }}>
             Iniciando tu asesor…
           </Text>
@@ -137,7 +137,7 @@ export default function OnboardingScreen() {
             ListFooterComponent={
               send.isPending ? (
                 <View style={[styles.bubble, styles.assistant]}>
-                  <ActivityIndicator color={colors.teal} />
+                  <ActivityIndicator color={colors.purple} />
                 </View>
               ) : null
             }
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   chat: { padding: spacing.lg, gap: spacing.sm },
   bubble: { maxWidth: '85%', borderRadius: radius.lg, padding: spacing.md },
-  user: { backgroundColor: colors.teal, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
+  user: { backgroundColor: colors.purple, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
   assistant: { backgroundColor: colors.white, alignSelf: 'flex-start', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: colors.gray100 },
   finishWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   inputRow: {
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.teal,
+    backgroundColor: colors.purple,
     alignItems: 'center',
     justifyContent: 'center',
   },

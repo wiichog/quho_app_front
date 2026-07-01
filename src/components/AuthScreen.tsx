@@ -36,7 +36,7 @@ export function AuthScreen({ children }: { children: ReactNode }) {
   return (
     <View style={styles.root}>
       <LinearGradient
-        colors={gradients.hero as unknown as [string, string]}
+        colors={gradients.dark as unknown as [string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}

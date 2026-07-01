@@ -80,7 +80,7 @@ export default function SubscriptionScreen() {
             <Card style={{ marginTop: spacing.md }}>
               {BENEFITS.map((b) => (
                 <View key={b} style={styles.benefitRow}>
-                  <MaterialIcons name="check-circle" size={20} color={colors.teal} />
+                  <MaterialIcons name="check-circle" size={20} color={colors.purple} />
                   <Text variant="bodyMedium" style={styles.flex}>
                     {b}
                   </Text>

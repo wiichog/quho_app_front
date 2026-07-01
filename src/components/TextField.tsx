@@ -33,7 +33,7 @@ export function TextField({
   const [hidden, setHidden] = useState(password);
 
   const dark = tone === 'dark';
-  const accent = dark ? colors.purple : colors.teal;
+  const accent = dark ? colors.purple : colors.purple;
   const idleBorder = dark ? 'rgba(255,255,255,0.15)' : colors.gray200;
   const borderColor = error ? colors.red : focused ? accent : idleBorder;
   const fieldBg = dark ? 'rgba(255,255,255,0.06)' : colors.white;

@@ -5,7 +5,7 @@ import { Text } from './Text';
 export function Loading({ message }: { message?: string }) {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.teal} />
+      <ActivityIndicator size="large" color={colors.purple} />
       {message ? (
         <Text variant="bodyMedium" color={colors.gray500} style={styles.message}>
           {message}

@@ -73,9 +73,9 @@ export default function ProfileScreen() {
             <MaterialIcons
               name={isPremium ? 'workspace-premium' : 'star-outline'}
               size={14}
-              color={colors.teal}
+              color={colors.purple}
             />
-            <Text variant="caption" color={colors.teal}>
+            <Text variant="caption" color={colors.purple}>
               Plan {isPremium ? 'Premium' : 'Gratis'}
             </Text>
           </View>
@@ -125,7 +125,7 @@ export default function ProfileScreen() {
           <Switch
             value={biometricsEnabled}
             onValueChange={toggleBiometrics}
-            trackColor={{ true: colors.teal, false: colors.gray300 }}
+            trackColor={{ true: colors.purple, false: colors.gray300 }}
             thumbColor={colors.white}
           />
         </View>
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.teal,
+    backgroundColor: colors.purple,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.tealPale,
+    backgroundColor: colors.purplePale,
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   usageRow: { marginBottom: spacing.sm },
   usageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xxs },
   track: { height: 6, borderRadius: 3, backgroundColor: colors.gray100, overflow: 'hidden' },
-  fill: { height: 6, borderRadius: 3, backgroundColor: colors.teal },
+  fill: { height: 6, borderRadius: 3, backgroundColor: colors.purple },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
   deleteRow: {
     flexDirection: 'row',

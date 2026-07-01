@@ -13,9 +13,12 @@ export const colors = {
   tealLight: '#5EEAD4',
   tealPale: '#CCFBF1',
 
-  // Editorial - Purple (solo marketing/landing y logins)
+  // Editorial - Purple (marca única: login + producto, look editorial)
   purple: '#5E0ED7',
   purpleDark: '#4A0BAA',
+  purpleDeep: '#2A0E5F', // fondo de heros/gradientes (alto contraste con texto blanco)
+  purpleLight: '#C4B5FD', // texto/íconos sobre superficies moradas oscuras
+  purplePale: '#EDE7FF', // fondos suaves (chips de ícono, estados sutiles)
 
   // Functional - Success
   green: '#10B981',
@@ -69,8 +72,9 @@ export const colors = {
 
 /** Gradientes (array de colores para expo-linear-gradient). */
 export const gradients = {
-  hero: [colors.darkNavy, colors.tealDark],
-  premium: [colors.teal, colors.blue],
+  hero: [colors.purpleDeep, colors.purple], // marca editorial: morado profundo → morado (tarjetas/heros)
+  dark: [colors.purpleDeep, colors.gray900], // pantallas completas oscuras (login/lock): near-black con tinte morado, para que el acento morado resalte
+  premium: [colors.purple, colors.blue],
   success: [colors.green, colors.teal],
 } as const;
 

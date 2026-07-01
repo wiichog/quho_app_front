@@ -197,7 +197,7 @@ export default function AddTransactionScreen() {
                   {item.display_name}
                 </Text>
                 {categoryId === item.id ? (
-                  <MaterialIcons name="check" size={20} color={colors.teal} />
+                  <MaterialIcons name="check" size={20} color={colors.purple} />
                 ) : null}
               </Pressable>
             )}

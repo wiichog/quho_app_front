@@ -82,7 +82,7 @@ export default function GamificationScreen() {
           </Text>
         </Card>
         <Card style={styles.statCard}>
-          <MaterialIcons name="military-tech" size={26} color={colors.teal} />
+          <MaterialIcons name="military-tech" size={26} color={colors.purple} />
           <Text variant="numberMedium">
             {s?.badges_unlocked ?? 0}/{s?.total_badges ?? 0}
           </Text>
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.teal,
+    backgroundColor: colors.purple,
     alignItems: 'center',
     justifyContent: 'center',
   },

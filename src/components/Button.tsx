@@ -75,19 +75,19 @@ function getPalette(variant: Variant, disabled: boolean) {
   }
   switch (variant) {
     case 'primary':
-      return { bg: colors.teal, fg: colors.white, border: 'transparent' };
+      return { bg: colors.purple, fg: colors.white, border: 'transparent' };
     case 'accent':
       return { bg: colors.purple, fg: colors.white, border: 'transparent' };
     case 'secondary':
       return { bg: colors.darkNavy, fg: colors.white, border: 'transparent' };
     case 'outline':
-      return { bg: colors.white, fg: colors.teal, border: colors.teal };
+      return { bg: colors.white, fg: colors.purple, border: colors.purple };
     case 'ghost':
-      return { bg: 'transparent', fg: colors.teal, border: 'transparent' };
+      return { bg: 'transparent', fg: colors.purple, border: 'transparent' };
     case 'danger':
       return { bg: colors.red, fg: colors.white, border: 'transparent' };
     default:
-      return { bg: colors.teal, fg: colors.white, border: 'transparent' };
+      return { bg: colors.purple, fg: colors.white, border: 'transparent' };
   }
 }
 

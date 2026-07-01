@@ -48,7 +48,7 @@ export function ScreenContainer({
               <RefreshControl
                 refreshing={!!refreshing}
                 onRefresh={onRefresh}
-                tintColor={colors.teal}
+                tintColor={colors.purple}
               />
             ) : undefined
           }

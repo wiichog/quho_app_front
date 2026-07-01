@@ -1,26 +1,34 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LockScreen } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { colors, fonts } from '@/theme';
 
 export default function AppTabsLayout() {
   const locked = useAuthStore((s) => s.locked);
+  const insets = useSafeAreaInsets();
   if (locked) return <LockScreen />;
+
+  // Respetar el safe-area inferior (home indicator / "barra de Siri"): sin esto,
+  // una altura fija empuja los íconos contra la barra. En equipos sin indicador
+  // (insets.bottom = 0) caemos a un padding cómodo. Patrón tipo Instagram.
+  const bottomInset = insets.bottom;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.teal,
+        tabBarActiveTintColor: colors.purple,
         tabBarInactiveTintColor: colors.gray400,
         tabBarStyle: {
           backgroundColor: colors.white,
           borderTopColor: colors.gray100,
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: 60 + bottomInset,
+          paddingBottom: bottomInset > 0 ? bottomInset : 10,
+          paddingTop: 10,
         },
+        tabBarItemStyle: { paddingTop: 2 },
         tabBarLabelStyle: {
           fontFamily: fonts.interSemiBold,
           fontSize: 10,
