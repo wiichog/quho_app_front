@@ -80,13 +80,16 @@ function RootNavigator() {
   useEffect(() => {
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
+    const inAppGroup = segments[0] === '(app)';
 
     if (status === 'unauthenticated' && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (status === 'authenticated') {
       if (!onboardingCompleted && !inOnboarding) {
         router.replace('/onboarding');
-      } else if (onboardingCompleted && (inAuthGroup || inOnboarding)) {
+      } else if (onboardingCompleted && !inAppGroup) {
+        // Incluye el arranque en frío parado en la ruta index "/": una sesión
+        // válida ya restaurada debe ir al dashboard, no quedarse en el splash.
         router.replace('/(app)/dashboard');
       }
     }
